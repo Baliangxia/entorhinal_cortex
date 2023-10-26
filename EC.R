@@ -5,28 +5,55 @@ EC<-read.csv("C:/Users/SamXi/OneDrive/Desktop/consulting/entorhinal_cortex/Opal 
 esquisser(EC)
 
 Raw_EC<- read.csv('AMM20_5DetectionsL2.csv',header = TRUE)
+
+
 gene1<-ggplot(EC) +
-  aes(x = Cell..Opal.520.mean) +
+  aes(x = X520) +
   geom_histogram(bins = 50, fill = "green") +
   labs(
-    x = "value of Gene 1",
+    x = "value of Opal 520",
     y = "Counts",
-    title = "Raw distribution for Gene 1"
+    title = "Raw distribution for Opal 520"
   ) +
-  theme_minimal()
+  theme(axis.text=element_text(size=12),
+        axis.title=element_text(size=14))
 
 gene1_log<-ggplot(EC) +
-  aes(x = log(Cell..Opal.520.mean)) +
+  aes(x = log(X520)) +
   geom_histogram(bins = 50, fill = "green") +
   labs(
-    x = "log value of Gene 1",
+    x = "log value of Opal 520",
     y = "Counts",
-    title = "Distribution for Gene 1 with log"
+    title = "Distribution for Opal 520 with log"
   ) +
-  theme_minimal()
+  theme(axis.text=element_text(size=12),
+        axis.title=element_text(size=14))
 
-View(Raw_EC)
 
-ggplot(Raw_EC)+
-  aes(x = Cell..Autofluorescence.mean) +
-  geom_histogram(bins = 30)
+
+ FI<-ggplot(EC) +
+  aes(x = Distance, y = X520, colour = Class) +
+  geom_point(shape = "circle", size = 2) +
+  scale_color_hue(direction = 1) +
+  labs(
+    x = "Distance",
+    y = "fluorescent intensity of Opal 520",
+    title = "Distance Versus FI of Opal 520 in different cells",
+    color = "Cell"
+  ) +
+  theme(axis.text=element_text(size=12),
+        axis.title=element_text(size=14))
+
+FI_1<-ggplot(EC) +
+  aes(x = Distance, y = X520, colour = Class) +
+  geom_point(shape = "circle", size = 4L) +
+  scale_color_hue(direction = 1) +
+  labs(
+    x = "Distance",
+    y = "fluorescent intensity of Opal 520",
+    title = "FI of Opal 520 Greater than 1",
+    color = "Cell"
+  ) +
+  theme(axis.text=element_text(size=12),
+            axis.title=element_text(size=14))+
+  ylim(1, 10)
