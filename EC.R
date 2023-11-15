@@ -1,6 +1,8 @@
 library(ggplot2)
 library(tidyverse)
 library(esquisse)
+library(stringr)
+library(gridExtra)
 EC<-read.csv("C:/Users/SamXi/OneDrive/Desktop/consulting/entorhinal_cortex/Opal data - Sheet1.csv",header = TRUE)
 esquisser(EC)
 
@@ -59,28 +61,110 @@ FI_1<-ggplot(EC) +
   ylim(1, 10)
 
 ggplot(EC) +
-  aes(x = log(Opal_570+1), y = log(Opal_690+1),colour=Class) +
+  aes(x = log(Opal_520), y = log(Opal_570),colour=Class) +
   geom_point(shape = "circle", size = 1L) +
   scale_color_hue(direction = 1) +
   labs(
-    x = "Opal_570",
-    y = "Opal_690",
-    title = "Opal_570 Versus Opal_690 (With Logarithm)"
+    x = "520",
+    y = "570",
+    title = "520 Versus 570 (With Logarithm)",
+    color= "Cell"
+  ) +
+  theme(axis.text=element_text(size=12),
+        axis.title=element_text(size=14))
+
+ggplot(EC) +
+  aes(x = log(Opal_520), y = log(Opal_570),colour=Class) +
+  geom_point(shape = "circle", size = 1L) +
+  scale_color_hue(direction = 1) +
+  labs(
+    x = "520",
+    y = "570",
+    title = "520 Versus 570 (With Logarithm)",
+    color= "Cell"
   ) +
   theme(axis.text=element_text(size=12),
         axis.title=element_text(size=14))+
   facet_wrap(vars(Class))
 
 ggplot(EC) +
-  aes(x = Opal_690, y = Distance) +
+  aes(x = Opal_520, y = Distance) +
   geom_point(shape = "circle", size = 1L) +
   scale_color_hue(direction = 1) +
   labs(
-    x = "Opal_690",
+    x = "520",
     y = "Distance",
-    title = "Opal_690 Versus Distance"
-    ) +
+    title = "Distribution for 520"
+  ) +
   theme(axis.text=element_text(size=12),
         axis.title=element_text(size=14))
+
+
+ggplot(EC) +
+  aes(x = Opal_520, y = Distance,colour=Class) +
+  geom_point(shape = "circle", size = 1L) +
+  scale_color_hue(direction = 1) +
+  labs(
+    x = "520",
+    y = "Distance",
+    title = "Distribution for 520"
+    ) +
+  theme(axis.text=element_text(size=12),
+        axis.title=element_text(size=14))+
+  facet_wrap(vars(Class))
+
+ggplot(EC) +
+  aes(x = Class, y = Opal_520) +
+  stat_summary(fun = "mean", geom = "bar", fill = "skyblue") +
+  labs(
+    x = "Cell",
+    y = "Average Fluorescent Intensity",
+    title = "520 in different Cell"
+  ) +
+  coord_flip() +
+  theme_minimal()
+
+EC %>%
+  filter(Class %in% c("520:570", "520:570:690", "520:570:620", "520:570:620:690")) %>%
+  ggplot() +
+  aes(x = Class,y = Opal_520) +
+  stat_summary(fun = "mean", geom = "bar", fill = "skyblue") +
+  labs(
+    x = "Cell",
+    y = "Average Fluorescent Intensity",
+    title = "570 in different Cell"
+  ) +
+  coord_flip() +
+  theme_minimal()
+
+EC %>%
+  filter(Class %in% c("Opal 620: Opal 520: *", "Opal 620: Opal 520: *: Opal 570", "Opal 620: Opal 520: Opal 690: *", 
+                      "Opal 620: Opal 520: Opal 690: Opal 570")) %>%
+  ggplot() +
+  aes(x = Class, weight = Opal_620) +
+  geom_bar(fill = "skyblue") +
+  labs(
+    x = "Class",
+    y = "Counts",
+    title = "Opal_620 in different region"
+  ) +
+  coord_flip()+
+  theme_minimal()
+
+EC %>%
+  filter(Class %in% c("*: Opal 520: Opal 690", "*: Opal 520: Opal 690: Opal 570", "Opal 620: Opal 520: Opal 690: *", 
+                      "Opal 620: Opal 520: Opal 690: Opal 570")) %>%
+  ggplot() +
+  aes(x = Class, weight = Opal_690) +
+  geom_bar(fill = "skyblue") +
+  labs(
+    x = "Class",
+    y = "Counts",
+    title = "Opal_690 in different region"
+  ) +
+  coord_flip()+
+  theme_minimal()
+
+
 
 
