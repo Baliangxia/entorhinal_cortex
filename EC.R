@@ -107,7 +107,8 @@ ggplot(EC) +
   labs(
     x = "520",
     y = "Distance",
-    title = "Distribution for 520"
+    title = "Distribution for 520",
+    color= "Cell"
     ) +
   theme(axis.text=element_text(size=12),
         axis.title=element_text(size=14))+
