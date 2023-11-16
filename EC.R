@@ -3,11 +3,10 @@ library(tidyverse)
 library(esquisse)
 library(stringr)
 library(gridExtra)
-EC<-read.csv("C:/Users/SamXi/OneDrive/Desktop/consulting/entorhinal_cortex/Opal data - Sheet1.csv",header = TRUE)
+EC<-read.csv("C:/Users/SamXi/OneDrive/Desktop/consulting/entorhinal_cortex/AMM20_5.csv",header = TRUE)
 esquisser(EC)
-
-Raw_EC<- read.csv('AMM20_5DetectionsL2.csv',header = TRUE)
-
+EC2<-read.csv("C:/Users/SamXi/OneDrive/Desktop/consulting/entorhinal_cortex/AMM12_4.csv",header = TRUE)
+EC3<-read.csv("C:/Users/SamXi/OneDrive/Desktop/consulting/entorhinal_cortex/AMM12_5.csv",header = TRUE)
 
 gene1<-ggplot(EC) +
   aes(x = Opal_520) +
@@ -61,26 +60,26 @@ FI_1<-ggplot(EC) +
   ylim(1, 10)
 
 ggplot(EC) +
-  aes(x = log(Opal_520), y = log(Opal_570),colour=Class) +
+  aes(x = log(Opal_570), y = log(Opal_620),colour=Class) +
   geom_point(shape = "circle", size = 1L) +
   scale_color_hue(direction = 1) +
   labs(
-    x = "520",
-    y = "570",
-    title = "520 Versus 570 (With Logarithm)",
+    x = "570",
+    y = "620",
+    title = "570 Versus 620 (With Logarithm)",
     color= "Cell"
   ) +
   theme(axis.text=element_text(size=12),
         axis.title=element_text(size=14))
 
-ggplot(EC) +
-  aes(x = log(Opal_520), y = log(Opal_570),colour=Class) +
+ggplot(EC2) +
+  aes(x = log(Opal_570), y = log(Opal_620),colour=Class) +
   geom_point(shape = "circle", size = 1L) +
   scale_color_hue(direction = 1) +
   labs(
-    x = "520",
-    y = "570",
-    title = "520 Versus 570 (With Logarithm)",
+    x = "570",
+    y = "620",
+    title = "570 Versus 620 (With Logarithm) in layer 2",
     color= "Cell"
   ) +
   theme(axis.text=element_text(size=12),
@@ -88,7 +87,7 @@ ggplot(EC) +
   facet_wrap(vars(Class))
 
 ggplot(EC) +
-  aes(x = Opal_520, y = Distance) +
+  aes(x = log(Opal_520), y = log(Distance)) +
   geom_point(shape = "circle", size = 1L) +
   scale_color_hue(direction = 1) +
   labs(
@@ -99,20 +98,54 @@ ggplot(EC) +
   theme(axis.text=element_text(size=12),
         axis.title=element_text(size=14))
 
-
-ggplot(EC) +
-  aes(x = Opal_520, y = Distance,colour=Class) +
+p1<-ggplot(EC) +
+  aes(x =  log(Opal_520), y = log(Distance),colour=Class) +
   geom_point(shape = "circle", size = 1L) +
   scale_color_hue(direction = 1) +
   labs(
     x = "520",
     y = "Distance",
-    title = "Distribution for 520",
+    title = "Distribution for 520 in layer 1",
     color= "Cell"
+  ) +
+  theme(axis.text=element_text(size=12),
+        axis.title=element_text(size=14))+
+  facet_wrap(vars(Class))
+
+p2<-ggplot(EC2) +
+  aes(x =  log(Opal_520), y = log(Distance),colour=Class) +
+  geom_point(shape = "circle", size = 1L) +
+  scale_color_hue(direction = 1) +
+  labs(
+    x = "520",
+    y = "Distance",
+    title = "Distribution for 520 in layer 2",
+    color= "Class"
     ) +
   theme(axis.text=element_text(size=12),
         axis.title=element_text(size=14))+
   facet_wrap(vars(Class))
+
+grid.arrange(p1,p2,ncol=2)
+
+
+
+ggplot(EC3) +
+  aes(x =  log(Opal_620), y = log(Distance),colour=Class) +
+  geom_point(shape = "circle", size = 1L) +
+  scale_color_hue(direction = 1) +
+  labs(
+    x = "620",
+    y = "Distance",
+    title = "Distribution for 520 in layer 3",
+    color= "Class"
+  ) +
+  theme(axis.text=element_text(size=12),
+        axis.title=element_text(size=14))+
+  facet_wrap(vars(Cell))
+
+
+
 
 ggplot(EC) +
   aes(x = Class, y = Opal_520) +
@@ -167,5 +200,40 @@ EC %>%
   theme_minimal()
 
 
+b1<-ggplot(EC) +
+  aes(x = Class, y =log(Opal_570)) +
+  geom_boxplot(fill = "red") +
+  labs(
+    x = "Type of cell",
+    y = "Log of 570",
+    title = "570 in different cell type in layer 1"
+  ) +
+theme(axis.text=element_text(size=8L),
+      axis.title=element_text(size=14L),
+      axis.text.x =element_text(angle = 45,vjust = 1,hjust = 1))
 
+b2<-ggplot(EC2) +
+  aes(x = Class, y =log(Opal_570)) +
+  geom_boxplot(fill = "red") +
+  labs(
+    x = "Type of cell",
+    y = "Log of 570",
+    title = "570 in different cell type in layer 2"
+  ) +
+  theme(axis.text=element_text(size=8L),
+        axis.title=element_text(size=14L),
+  axis.text.x =element_text(angle = 45,vjust = 1,hjust = 1))
 
+b3<-ggplot(EC3) +
+  aes(x = Class, y =log(Opal_570)) +
+  geom_boxplot(fill = "red") +
+  labs(
+    x = "Type of cell",
+    y = "Log of 570",
+    title = "520 in different cell type"
+  ) +
+  theme(axis.text=element_text(size=6L),
+        axis.title=element_text(size=14L),
+        axis.text.x =element_text(angle = 45,vjust = 1,hjust = 1))
+
+grid.arrange(b1,b2,ncol=2)
