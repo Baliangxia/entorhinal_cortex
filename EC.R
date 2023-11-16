@@ -99,13 +99,13 @@ ggplot(EC) +
         axis.title=element_text(size=14))
 
 p1<-ggplot(EC) +
-  aes(x =  log(Opal_520), y = log(Distance),colour=Class) +
+  aes(x =  log(Opal_570), y = log(Distance),colour=Class) +
   geom_point(shape = "circle", size = 1L) +
   scale_color_hue(direction = 1) +
   labs(
-    x = "520",
+    x = "570",
     y = "Distance",
-    title = "Distribution for 520 in layer 1",
+    title = "Distribution for 570 in layer 1",
     color= "Cell"
   ) +
   theme(axis.text=element_text(size=12),
@@ -113,13 +113,13 @@ p1<-ggplot(EC) +
   facet_wrap(vars(Class))
 
 p2<-ggplot(EC2) +
-  aes(x =  log(Opal_520), y = log(Distance),colour=Class) +
+  aes(x =  log(Opal_570), y = log(Distance),colour=Class) +
   geom_point(shape = "circle", size = 1L) +
   scale_color_hue(direction = 1) +
   labs(
-    x = "520",
+    x = "570",
     y = "Distance",
-    title = "Distribution for 520 in layer 2",
+    title = "Distribution for 570 in layer 2",
     color= "Class"
     ) +
   theme(axis.text=element_text(size=12),
@@ -237,4 +237,7 @@ b3<-ggplot(EC3) +
         axis.text.x =element_text(angle = 45,vjust = 1,hjust = 1))
 
 grid.arrange(b1,b2,ncol=2)
+
+
+
 
