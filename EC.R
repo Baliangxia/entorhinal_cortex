@@ -237,3 +237,4 @@ b3<-ggplot(EC3) +
         axis.text.x =element_text(angle = 45,vjust = 1,hjust = 1))
 
 grid.arrange(b1,b2,ncol=2)
+
