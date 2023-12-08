@@ -194,4 +194,35 @@ fig2_dist
 ```{r}
 fig3_dist
 ```
+# Cluster
+```{r}
+log_FI2 <- log(AMM12_2[AMM12_2$MFI520 < quantile(AMM12_2$MFI520, 0.95), c("MFI570", "MFI520", "MFI690", "dist")])
 
+k <- 5  # Number of clusters
+set.seed(317)
+kmeans_result <- kmeans(log_FI2, centers = k)
+
+log_FI2$cluster <- as.factor(kmeans_result$cluster)
+
+fig2_all <- plot_ly(log_FI2, x = ~MFI570, y = ~MFI520, z = ~MFI690, color = ~cluster, marker = list(size = 3))
+fig2_all <- fig2_all %>% add_markers()
+
+fig2_all <- fig2_all %>% layout(
+  title = "570 vs. 520 vs 690, in layer 2 with Clusters",
+  scene = list(xaxis = list(title = '570'), yaxis = list(title = '520'), zaxis = list(title = '690'))
+)
+fig2_all
+```
+# heatmap example
+```{r}
+log_FI2 <- log(AMM12_2[AMM12_2$MFI520 < quantile(AMM12_2$MFI520, 0.95), c("MFI570", "MFI620", "MFI690", "MFI520","dist")])
+cor_matrix <- cor(log_FI2)
+cor_df <- as.data.frame(as.table(cor_matrix))
+ggplot(cor_df, aes(x = Var1, y = Var2, fill = Freq)) +
+  geom_tile() +
+  scale_fill_gradient(low = "red", high = "blue") +
+  labs(title = "Heatmap for layer 2", x = "", y = "") +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+
+```
