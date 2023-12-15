@@ -8,7 +8,7 @@ date: "`r Sys.Date()`"
 output: 
   pdf_document: 
   latex_engine: xelatex 
-  keep_tex: true 
+  keep_tex: true
 header-includes: 
   - \usepackage{titling} 
   - \pretitle{\begin{center}\Huge\bfseries} 
@@ -18,6 +18,7 @@ header-includes:
   - \usepackage{fancyhdr} 
   - \pagestyle{fancy} 
   - \fancyfoot[C]{\thepage}
+always_allow_html: true
 ---
 
 # Introduction
@@ -32,7 +33,7 @@ The goal of the project is firstly count the number of positive cells for differ
 
 # Data Cleaning
 
-We have divide the three layers into two parts, one is the data that all cells contain Opal_520, the other dataset have all cells whether it contains Opal_520 or not. Most of the time, we use the data with all cells contain Opal_520. Here is an example of head 5 rows of the data.
+We have divided the three layers into two datasets: one comprises cells containing Opal_520, while the other includes all cells, whether or not they contain Opal_520. Typically, we utilize the dataset where all cells contain Opal_520. Here is an example showing the first five rows of this dataset:
 
 | Class           | Opal_520 | Opal_570 |Opal_620 | Opal_690 |  Distance   |
 |-----------------|----------|----------|---------|----------|-------------|
@@ -42,7 +43,7 @@ We have divide the three layers into two parts, one is the data that all cells c
 | 520:690         |  0.4816  |  0.0202  |  0.02   |  0.3153  |  2868.6372  |
 | 520:570         |  0.2459  |  0.1088  |  0.0211 |  0.0229  |  2918.8682  |
 
-In another dataset, we check the existence of genes in the cell and add four columns with boolean output. We just use this dataset with 3D plot. Here is an example of head 5 rows of the data.
+In a separate dataset, we assess the presence of genes in each cell, incorporating four additional columns with boolean outputs. This dataset is exclusively employed for generating 3D plots. Below is an illustration featuring the first five rows of this particular dataset:
 
 |  MFI520  |  MFI570  |  MFI620 |  MFI690  |    dist     |  IND520  |  IND570  |  IND620 |  IND690  | 
 |----------|----------|---------|----------|-------------|----------|----------|---------|----------|
@@ -52,7 +53,7 @@ In another dataset, we check the existence of genes in the cell and add four col
 |  0.4816  |  0.0202  |  0.02   |  0.3153  |  2868.6372  |   TRUE   |  FALSE   |  FALSE  |   TRUE   |  
 |  0.2459  |  0.1088  |  0.0211 |  0.0229  |  2918.8682  |   TRUE   |   TRUE   |  FALSE  |   FALSE  |  
 
-Both of the data clean the value with fluorescent intensity equals 0.
+Both datasets undergo a cleaning process wherein values associated with fluorescent intensity equal to 0 are eliminated. Additionally, we have renamed certain column names for better clarity and understanding. When examining the fluorescent intensity for each gene, we employ the logarithm to enhance our ability to visualize the distribution.
 
 ```{r}
 #| label: Load libraries
@@ -67,6 +68,10 @@ library(gridExtra)
 library(plotly)
 library(ComplexUpset)
 library(UpSetR)
+library(rgl)
+library(webshot)
+library(IRdisplay)
+library(png)
 ```
 
 ```{r}
@@ -141,20 +146,12 @@ layer12_5 <- filter(layer12_5, Opal_520 != 0 & Opal_570 != 0 & Opal_620 != 0 & O
 
 ## Upset Plot
 
-We use the Upset plot to see the distribution for three layers. 
+We employ the UpSet plot, a powerful visualization tool, to gain insights into the distribution of elements across three distinct layers in our dataset. The UpSet plot provides a comprehensive overview of intersecting sets, showcasing the frequency and relationships among them. Specifically, it allows us to explore how various combinations of elements from the three layers contribute to the overall distribution, enabling a nuanced understanding of patterns and overlaps in the data. 
 
 ```{r, fig.height=4, out.height='50%'}
 #| warning: false
 #| message: false
 #| echo: false
-layer20_5 <- layer20_5 %>%
-  mutate(`520` = ifelse(grepl("520", layer20_5[["Class"]]), 1, 0),
-         `570` = ifelse(grepl("570", layer20_5[["Class"]]), 1, 0),
-         `620` = ifelse(grepl("620", layer20_5[["Class"]]), 1, 0),
-         `690` = ifelse(grepl("690", layer20_5[["Class"]]), 1, 0))
-
-upset20_5<-upset(layer20_5, sets = c("520", "570", "620", "690"), mainbar.y.label = "Frequency", main.bar.color = "red")
-
 layer12_4 <- layer12_4 %>%
   mutate(`520` = ifelse(grepl("520", layer12_4[["Class"]]), 1, 0),
          `570` = ifelse(grepl("570", layer12_4[["Class"]]), 1, 0),
@@ -169,16 +166,15 @@ layer12_5 <- layer12_5 %>%
          `690` = ifelse(grepl("690", layer12_5[["Class"]]), 1, 0))
 
 upset12_5<-upset(layer12_5, sets = c("520", "570", "620", "690"),mainbar.y.label = "Frequency", main.bar.color = "red")
-```
 
-```{r, fig.height=4, out.height='50%'}
-#| warning: false
-#| message: false
-#| echo: false
-upset20_5
-```
+layer20_5 <- layer20_5 %>%
+  mutate(`520` = ifelse(grepl("520", layer20_5[["Class"]]), 1, 0),
+         `570` = ifelse(grepl("570", layer20_5[["Class"]]), 1, 0),
+         `620` = ifelse(grepl("620", layer20_5[["Class"]]), 1, 0),
+         `690` = ifelse(grepl("690", layer20_5[["Class"]]), 1, 0))
 
-The figure above shows the distribution for layer20_5. We use the data all cells contain Opal_520, so the number of Opal_520 implies the number of cells in the data which is around 600. And we can see the cell with 520:690 has the highest frequency with the number 252 in the layer. 
+upset20_5<-upset(layer20_5, sets = c("520", "570", "620", "690"), mainbar.y.label = "Frequency", main.bar.color = "red")
+```
 
 ```{r, fig.height=4, out.height='50%'}
 #| warning: false
@@ -187,7 +183,7 @@ The figure above shows the distribution for layer20_5. We use the data all cells
 upset12_4
 ```
 
-The figure above shows the distribution for layer12_4. We use the data all cells contain Opal_520, so the number of Opal_520 implies the number of cells in the data which is around 1000. And we can see the cell with 520:690 has the highest frequency with the number 415 in the layer. 
+The above figure illustrates the distribution for layer12_4. By employing data that includes only cells containing Opal_520, the count of Opal_520 serves as a direct indicator of the number of cells in the dataset, totaling around 1000. Notably, within this layer, the cell combination 520:690 exhibits the highest frequency, with a count of 415.
 
 ```{r, fig.height=4, out.height='50%'}
 #| warning: false
@@ -196,31 +192,27 @@ The figure above shows the distribution for layer12_4. We use the data all cells
 upset12_5
 ```
 
-The figure above shows the distribution for layer12_5. We use the data all cells contain Opal_520, so the number of Opal_520 implies the number of cells in the data which is around 2000. And we can see the cell with 520:570:690 has the highest frequency with the number 744 in the layer. 
-
-As a summary with this three figures, we can see that Opal_690 appears more than Opal_570 and Opal_620. In layer20_5 and layer12_4, we both have 520:690 with the highest frequency in the layer. But in layer12_5, though 520:690 has a big frequency value, 520:570:690 has the biggest frequency value in this layer. Interestingly, Opal_520 and Opal_690 appears very often. So in the next step, we want to see the relationship between Opal_690 and Opal_520.   
-
-## Correlation 
-
-We use the Scatterplot to see the distribution of Opal_520 and Opal_690. In the plot, the x axis shows the log value of the fluorescent intensity for Opal_520, the y axis shows the log value of the fluorescent intensity for Opal_690.
+The figure above depicts the distribution for layer12_5. Utilizing data that exclusively includes cells containing Opal_520, the count of Opal_520 directly represents the number of cells in the dataset, totaling approximately 2000. Notably, within this layer, the cell combination 520:570:690 exhibits the highest frequency, with a count of 744.
 
 ```{r, fig.height=4, out.height='50%'}
 #| warning: false
 #| message: false
 #| echo: false
-corr20_5<-ggplot(layer20_5) +
-  aes(x = log(Opal_520), y = log(Opal_690),color = Class) +
-  geom_point(shape = "circle", size = 1L) +
-  scale_color_hue(direction = 1) +
-  labs(
-    x = "Log of FI for 520",
-    y = "Log of FI for 690",
-    title = "520 Versus 690 (With Logarithm) in layer20_5"
-  ) +
-  theme(axis.text=element_text(size=10),
-        axis.title=element_text(size=12))+
-  facet_wrap(vars(Class))
+upset20_5
+```
 
+The figure above illustrates the distribution for layer20_5. Utilizing data comprising cells with Opal_520, the count of Opal_520 directly corresponds to the number of cells in the dataset, totaling approximately 600. Notably, the cell combination 520:690 exhibits the highest frequency, with a count of 252 within the layer.
+
+In summarizing the insights from these three figures, a notable observation is that Opal_690 appears more frequently than Opal_570 and Opal_620 across layer20_5, layer12_4, and layer12_5. Both layer20_5 and layer12_4 exhibit 520:690 with the highest frequency in their respective layers. However, in layer12_5, while 520:690 boasts a substantial frequency, 520:570:690 holds the highest frequency value. Interestingly, Opal_520 and Opal_690 frequently co-occur. Moving forward, our analysis aims to delve deeper into understanding the relationship between Opal_690 and Opal_520.
+
+## Correlation 
+
+We employ a scatterplot to visually analyze the distribution of Opal_520 and Opal_690. In this plot, the x-axis represents the logarithmic values of the fluorescent intensity for Opal_520, while the y-axis depicts the logarithmic values of the fluorescent intensity for Opal_690. This visualization allows us to explore the relationship and potential patterns between the two variables in a quantitative manner.
+
+```{r, fig.height=4, out.height='50%'}
+#| warning: false
+#| message: false
+#| echo: false
 corr12_4<-ggplot(layer12_4) +
   aes(x = log(Opal_520), y = log(Opal_690),color = Class) +
   geom_point(shape = "circle", size = 1L) +
@@ -242,6 +234,19 @@ corr12_5<-ggplot(layer12_5) +
     x = "Log of FI for 520",
     y = "Log of FI for 690",
     title = "520 Versus 690 (With Logarithm) in layer12_5"
+  ) +
+  theme(axis.text=element_text(size=10),
+        axis.title=element_text(size=12))+
+  facet_wrap(vars(Class))
+
+corr20_5<-ggplot(layer20_5) +
+  aes(x = log(Opal_520), y = log(Opal_690),color = Class) +
+  geom_point(shape = "circle", size = 1L) +
+  scale_color_hue(direction = 1) +
+  labs(
+    x = "Log of FI for 520",
+    y = "Log of FI for 690",
+    title = "520 Versus 690 (With Logarithm) in layer20_5"
   ) +
   theme(axis.text=element_text(size=10),
         axis.title=element_text(size=12))+
@@ -269,9 +274,11 @@ corr12_5
 corr20_5
 ```
 
-For the figures above, we can see the cells contain Opal_690 will have a high value with Opal_690 which makes sense. In layer12_4 and layer12_5, the cell 520:570:690 and 520:690 shows a positive relationship for Opal_520 and Opal_690. When the value of Opal_520 increases, the value of Opal_690 also increases. In layer20_5, we can not find significant correlation  between Opal_520 and Opal _690. We are not sure if this correlation is common for all the layers or only happens in layer12_4 and layer12_5, since there is a slight positive correlation in layer20_5 but not as significant as layer12_4 and layer12_5.
+Based on the figures above, it is evident that cells containing Opal_690 tend to exhibit higher values for Opal_690, which aligns with expectations. In both layer12_4 and layer12_5, the cells with combinations 520:570:690 and 520:690 demonstrate a positive correlation between Opal_520 and Opal_690. As the value of Opal_520 increases, there is a corresponding increase in the value of Opal_690. However, in layer20_5, a notable correlation between Opal_520 and Opal_690 is not readily apparent. The presence of a subtle positive correlation in layer20_5 raises the question of whether this correlation is a common feature across all layers or if it is specific to layer12_4 and layer12_5. Further investigation is required to ascertain whether the observed correlation is consistent across all layers or if it exhibits variation, with layer12_4 and layer12_5 demonstrating a more pronounced association compared to layer20_5.
 
 ## Boxplot
+
+The utilization of boxplots offers a comprehensive and insightful analysis of the distribution of Opal_690 across eight distinct cell types. Boxplots provide a visual summary of the central tendency, spread, and potential outliers within each cell type, allowing for the efficient comparison of distributional characteristics. By employing boxplots, we can discern not only the variations in Opal_690 expression across different cell types but also gain a nuanced understanding of the overall distributional patterns and potential heterogeneity within each cell type.
 
 ```{r, fig.height=4, out.height='50%'}
 #| warning: false
@@ -283,11 +290,12 @@ box12_4<-ggplot(layer12_4) +
   labs(
     x = "Type of cell",
     y = "Log of FI for 690",
-    title = "690 in layer12_4"
+    title = "Distribution of 690 in layer12_4"
   ) +
 theme(axis.text=element_text(size=8L),
       axis.title=element_text(size=14L),
-      axis.text.x =element_text(angle = 45,vjust = 1,hjust = 1))
+      axis.text.x =element_text(angle = 45,vjust = 1,hjust = 1),
+      plot.title = element_text(hjust = 0.5))
 
 box12_5<-ggplot(layer12_5) +
   aes(x = Class, y =log(Opal_690)) +
@@ -295,11 +303,12 @@ box12_5<-ggplot(layer12_5) +
   labs(
     x = "Type of cell",
     y = "Log of FI for 690",
-    title = "690 in layer12_5"
+    title = "Distribution of 690 in layer12_5"
   ) +
 theme(axis.text=element_text(size=8L),
       axis.title=element_text(size=14L),
-      axis.text.x =element_text(angle = 45,vjust = 1,hjust = 1))
+      axis.text.x =element_text(angle = 45,vjust = 1,hjust = 1),
+      plot.title = element_text(hjust = 0.5))
 
 box20_5<-ggplot(layer20_5) +
   aes(x = Class, y =log(Opal_690)) +
@@ -307,11 +316,12 @@ box20_5<-ggplot(layer20_5) +
   labs(
     x = "Type of cell",
     y = "Log of FI for 690",
-    title = "690 in layer20_5"
+    title = "Distribution of 690 in layer20_5"
   ) +
 theme(axis.text=element_text(size=8L),
       axis.title=element_text(size=14L),
-      axis.text.x =element_text(angle = 45,vjust = 1,hjust = 1))
+      axis.text.x =element_text(angle = 45,vjust = 1,hjust = 1),
+      plot.title = element_text(hjust = 0.5))
 ```
 
 ```{r, fig.height=4, out.height='50%'}
@@ -335,11 +345,11 @@ box12_5
 box20_5
 ```
 
-For the figures above, we can see the cells contain Opal_690 will have significant higher value than the cells don't contain Opal_690.
+The observed figures clearly indicate a substantial distinction between cells containing Opal_690 and those without it. Specifically, cells that include Opal_690 exhibit significantly higher values compared to their counterparts lacking Opal_690. This stark contrast underscores the impact of Opal_690 on the measured values, suggesting a discernible influence of Opal_690 presence on the observed fluorescent intensities. The visual representation of this difference in values between the two groups provides a clear and immediate understanding of the impact of Opal_690 on the distribution within the dataset.
 
-## Distribution of Distance and Opal_690 
+## Distribution for Distance and Opal_690 
 
-Since Opal_690 has some correlation with Opal_520, we want to find if there is any specific correlation for Opal_690 and Distance. In the plot, the x axis shows the log value of the fluorescent intensity for Opal_690, the y axis shows the log value of the Distance.
+Given that Opal_690 exhibits some correlation with Opal_520, we aim to explore any specific correlation between Opal_690 and Distance. In the plot, the x-axis represents the logarithmic values of the fluorescent intensity for Opal_690, while the y-axis illustrates the logarithmic values of the Distance.
 
 ```{r, fig.height=4, out.height='50%'}
 #| warning: false
@@ -406,6 +416,223 @@ dist12_5
 dist20_5
 ```
 
-For the figures above, we focus on the cells with 520:690, 520:570:690, 520:620:690, and 520:57:620:690. It is most significant for layer12_5 that when the value of Opal_690 is small, the distance has a big range from low to high. But when the value of Opal_690 becomes bigger, we can see that the distance shrinks to a low range wiht only big value. For layer20_5, we can see that it has a small range with big value of distance whether the value of Opal_690 is big or small.
+In the above figures, our focus centers on cells with combinations 520:690, 520:570:690, 520:620:690, and 520:57:620:690. Notably, in layer12_5, a noteworthy pattern emerges, indicating that when the value of Opal_690 is small, the distance exhibits a considerable range from low to high. However, as the value of Opal_690 increases, the distance tends to contract into a narrower range characterized by larger values. This trend suggests a distinctive relationship between Opal_690 and distance in layer12_5. On the other hand, for layer20_5, a distinct pattern is observed, wherein a small range with substantial distance values prevails regardless of whether the value of Opal_690 is high or low. This disparity in patterns underscores the importance of considering layer-specific nuances in interpreting the relationship between Opal_690 and distance.
+
+## Heatmap
+
+We also came up with a heat map to indicate the relationship of different genes. And we can see that there is some difference between the correlations among 3 layers. 
+
+```{r, fig.height=4, out.height='50%'}
+#| warning: false
+#| message: false
+#| echo: false
+cor_data <- log_FI[, c("MFI520", "MFI570", "MFI620", "MFI690", "dist")]
+cor_matrix <- cor(cor_data)
+
+heatmap(cor_matrix, 
+         color = colorRampPalette(c("#D73027", "#4575B4", "#91BFDB"))(50), 
+         main = "Heatmap of Layer12_4",
+         fontsize = 8,
+         clustering_method = "complete")
+
+cor_data2 <- log_FI2[, c("MFI520", "MFI570", "MFI620", "MFI690", "dist")]
+cor_matrix2 <- cor(cor_data2)
+
+heatmap(cor_matrix2, 
+         color = colorRampPalette(c("#D73027", "#4575B4", "#91BFDB"))(50), 
+         main = "Heatmap of Layer12_5",
+         fontsize = 8,
+         clustering_method = "complete")
+
+cor_data3 <- log_FI3[, c("MFI520", "MFI570", "MFI620", "MFI690", "dist")]
+cor_matrix3 <- cor(cor_data3)
+
+heatmap(cor_matrix3, 
+         color = colorRampPalette(c("#D73027", "#4575B4", "#91BFDB"))(50), 
+         main = "Heatmap of Layer20_5",
+         fontsize = 8,
+         clustering_method = "complete")
+```
+
+For the figures above, the intensity of color serves as an indicator of the strength of correlation, with darker shades representing greater correlation. Notably, if a line connects two variables, it signifies that these two variables exhibit the highest correlation compared to any others. Examining both layer12_4 and layer12_5, a notable line connects Opal_690 and Opal_520, providing empirical support for our hypothesis regarding their high correlation. Contrary to this, as previously mentioned, in layer20_5, the correlation between Opal_690 and Opal_520 is not particularly significant; however, it is intriguing to observe a connecting line between Opal_690 and Distance, indicating a noteworthy correlation between these variables. This unexpected correlation in layer20_5 adds a layer of complexity to our understanding, highlighting the importance of considering layer-specific dynamics in interpreting correlation patterns.
+
+## 3D Plot
+
+Since there is more than two variables we’re dealing with, an idea of visualization in 3-D version is inspired by our advisor. But knitting the moving pictures of 3D plots is not available, besides the screenshots provided with only one or two perspectives, we will give you our original codes so that you can reproduce what we got so far. And please be aware that the scales labeled below are all after log-transformation aimed for a more clear view.
+
+```{r, fig.height=4, out.height='50%'}
+#| warning: false
+#| message: false
+#| echo: false
+all12_4 <- plot_ly(log_FI, x = ~MFI570, y = ~MFI620, z = ~MFI690, marker = list(color = ~MFI520, colorscale = "Rainbow", showscale = TRUE, size = 3))
+all12_4 <- all12_4 %>% add_markers()
+all12_4 <- all12_4 %>% layout(title = "570 vs. 620 vs 690,in layer12_4",
+                              scene = list(xaxis = list(title = '570'),
+                                           yaxis = list(title = '620'),
+                                           zaxis = list(title = '690')))
 
 
+
+log_FI <- log(filter(AMM12_4, IND520 == T & MFI520 < quantile(AMM12_4$MFI520, 0.95) ))
+part12_4 <- plot_ly(log_FI, x = ~MFI570, y = ~MFI620, z = ~MFI690, marker = list(color = ~MFI520, colorscale = "Rainbow", showscale = TRUE, size = 3))
+part12_4 <- part12_4 %>% add_markers()
+part12_4 <- part12_4 %>% layout(title = "520=T,570 vs. 620 vs 690, in layer12_4",
+                              scene = list(xaxis = list(title = '570'),
+                                           yaxis = list(title = '620'),
+                                           zaxis = list(title = '690')))
+
+
+
+log_FI <- log(filter(AMM12_4,  MFI520 < quantile(AMM12_4$MFI520, 0.95) & dist > quantile(AMM12_4$dist, 0.05)))
+dis12_4 <- plot_ly(log_FI, x = ~MFI520, y = ~MFI570, z = ~MFI690, marker = list(color = ~dist, colorscale = "Rainbow", showscale = TRUE, size = 3))
+dis12_4 <- dis12_4 %>% add_markers()
+dis12_4 <- dis12_4 %>% layout(title = "520=T, 520 vs. 570 vs 690, in layer12_4",
+                                scene = list(xaxis = list(title = '520'), 
+                                             yaxis = list(title = '570'), 
+                                             zaxis = list(title = '690')))
+
+all12_5 <- plot_ly(log_FI, x = ~MFI570, y = ~MFI620, z = ~MFI690, marker = list(color = ~MFI520, colorscale = "Rainbow", showscale = TRUE, size = 3))
+all12_5 <- all12_5 %>% add_markers()
+all12_5 <- all12_5 %>% layout(title = "570 vs. 620 vs 690,in layer12_5",
+                              scene = list(xaxis = list(title = '570'),
+                                           yaxis = list(title = '620'),
+                                           zaxis = list(title = '690')))
+
+
+
+log_FI2 <- log(filter(AMM12_4, IND520 == T & MFI520 < quantile(AMM12_4$MFI520, 0.95) ))
+part12_5 <- plot_ly(log_FI2, x = ~MFI570, y = ~MFI620, z = ~MFI690, marker = list(color = ~MFI520, colorscale = "Rainbow", showscale = TRUE, size = 3))
+part12_5 <- part12_5 %>% add_markers()
+part12_5 <- part12_5 %>% layout(title = "520=T,570 vs. 620 vs 690, in layer12_5",
+                              scene = list(xaxis = list(title = '570'),
+                                           yaxis = list(title = '620'),
+                                           zaxis = list(title = '690')))
+
+
+
+log_FI2 <- log(filter(AMM12_4,  MFI520 < quantile(AMM12_4$MFI520, 0.95) & dist > quantile(AMM12_4$dist, 0.05)))
+dis12_5 <- plot_ly(log_FI2, x = ~MFI520, y = ~MFI570, z = ~MFI690, marker = list(color = ~dist, colorscale = "Rainbow", showscale = TRUE, size = 3))
+dis12_5 <- dis12_5 %>% add_markers()
+dis12_5 <- dis12_5 %>% layout(title = "520=T, 520 vs. 570 vs 690, in layer12_5",
+                                scene = list(xaxis = list(title = '520'), 
+                                             yaxis = list(title = '570'), 
+                                             zaxis = list(title = '690')))
+
+all20_5 <- plot_ly(log_FI, x = ~MFI570, y = ~MFI620, z = ~MFI690, marker = list(color = ~MFI520, colorscale = "Rainbow", showscale = TRUE, size = 3))
+all20_5 <- all20_5 %>% add_markers()
+all20_5 <- all20_5 %>% layout(title = "570 vs. 620 vs 690,in layer20_5",
+                              scene = list(xaxis = list(title = '570'),
+                                           yaxis = list(title = '620'),
+                                           zaxis = list(title = '690')))
+
+
+
+log_FI3 <- log(filter(AMM12_4, IND520 == T & MFI520 < quantile(AMM12_4$MFI520, 0.95) ))
+part20_5 <- plot_ly(log_FI3, x = ~MFI570, y = ~MFI620, z = ~MFI690, marker = list(color = ~MFI520, colorscale = "Rainbow", showscale = TRUE, size = 3))
+part20_5 <- part20_5 %>% add_markers()
+part20_5 <- part20_5 %>% layout(title = "520=T,570 vs. 620 vs 690, in layer20_5",
+                              scene = list(xaxis = list(title = '570'),
+                                           yaxis = list(title = '620'),
+                                           zaxis = list(title = '690')))
+
+
+
+log_FI3 <- log(filter(AMM12_4,  MFI520 < quantile(AMM12_4$MFI520, 0.95) & dist > quantile(AMM12_4$dist, 0.05)))
+dis20_5 <- plot_ly(log_FI3, x = ~MFI520, y = ~MFI570, z = ~MFI690, marker = list(color = ~dist, colorscale = "Rainbow", showscale = TRUE, size = 3))
+dis20_5 <- dis20_5 %>% add_markers()
+dis20_5 <- dis20_5 %>% layout(title = "520=T, 520 vs. 570 vs 690, in layer20_5",
+                                scene = list(xaxis = list(title = '520'), 
+                                             yaxis = list(title = '570'), 
+                                             zaxis = list(title = '690')))
+
+```
+
+```{r, fig.height=4, out.height='50%',test-rgl, webgl=TRUE}
+#| warning: false
+#| message: false
+#| echo: false
+all12_4
+grid::grid.raster(readPNG("all12_4.png"))
+```
+
+```{r, fig.height=4, out.height='50%'}
+#| warning: false
+#| message: false
+#| echo: false
+all12_5
+grid::grid.raster(readPNG("all12_5.png"))
+```
+
+```{r, fig.height=4, out.height='50%'}
+#| warning: false
+#| message: false
+#| echo: false
+all20_5
+grid::grid.raster(readPNG("all20_5.png"))
+```
+
+The plots above show the relationship among each gene in terms of intensity level of 520.  But these plots accounts all the cells in the sample no matter there is 520 included or not. So it’s hard to observe significant relationship among different genes. Next we decided to only include the cells with 520 detected.
+
+```{r, fig.height=4, out.height='50%'}
+#| warning: false
+#| message: false
+#| echo: false
+part12_4
+grid::grid.raster(readPNG("part12_4.png"))
+```
+
+```{r, fig.height=4, out.height='50%'}
+#| warning: false
+#| message: false
+#| echo: false
+part12_5
+grid::grid.raster(readPNG("part12_5.png"))
+```
+
+```{r, fig.height=4, out.height='50%'}
+#| warning: false
+#| message: false
+#| echo: false
+part20_5
+grid::grid.raster(readPNG("part20_5.png"))
+```
+
+As removing the cells without 520, some relationships could be observed based on the 3D plots. For example, in Layer 2, As the intensity of 520 raise, the intensity of 690 increases while 570 seems to show a reverse relationship with 520 compared to 690. Also, 620 doesn’t have obvious relationship with other genes. So for further investigation, we decided to remove 620 which is consider meaningless for showing no any trends with the others in these three plots. Instead 520 is included below.
+
+```{r, fig.height=4, out.height='50%'}
+#| warning: false
+#| message: false
+#| echo: false
+dis12_4
+grid::grid.raster(readPNG("dis12_4.png"))
+```
+
+```{r, fig.height=4, out.height='50%'}
+#| warning: false
+#| message: false
+#| echo: false
+dis12_5
+grid::grid.raster(readPNG("dis12_5.png"))
+```
+
+```{r, fig.height=4, out.height='50%'}
+#| warning: false
+#| message: false
+#| echo: false
+dis20_5
+grid::grid.raster(readPNG("dis20_5.png"))
+```
+
+To get 520 involved, the intensity level as colored option is no longer appropriate. Besides intensity level, we thought there might also be some contribution made by distance to the distribution of cells in EC region. So instead of intensity level, we redo the previous process but colored in terms of distance. And we found that In layer 2 as the intensity of 520 decreases, the intensity of 690 also decreases. And as intensity of 520 held constant, the higher the intensity of 690 is the more distant from the edge of EC.
+
+Here are only couple examples from each section of plots. We hope these plots would help our client to seek more essential information for their study.
+
+# Conclusion
+
+The project’s application of robust statistical methods revealed intricate patterns in gene expression. Notably, a significant correlation between Opal_690 and Opal_520 was found, especially in layers 1 and 2 of the EC. These results highlight the complex interplay of gene expression, which varies distinctly across different layers. Furthermore, the spatial analysis of gene distribution underscored how gene expression intensity is related to proximity to the EC edge, adding a spatial dimension to our understanding of gene distribution. 
+
+Throughout the project, we emphasized the clear communication of complex statistical findings to a diverse audience. This involved transforming technical data into comprehensible insights for both scientific and non-expert stakeholders. The visual aids, crafted by our team members, played a crucial role in making intricate patterns more accessible and understandable, enhancing the impact of our research findings.
+
+The integration of statistical rigor with effective communication strategies was key to the project’s success. Our approach not only deepened the understanding of specific genes in the EC but also exemplified the importance of multidisciplinary collaboration in research. The team’s combined expertise in analysis, visualization, and communication was crucial in delivering a comprehensive and impactful outcome.
+
+In summary, this project exemplifies the power of collaborative research, combining detailed statistical analysis with clear, effective communication. We have not only advanced our understanding of gene distribution in the Entorhinal Cortex but also set a new standard for future interdisciplinary research. Our findings lay the groundwork for further investigations into the roles of these genes in cognitive processes and, potentially, in the pathology of neurological disorders.
