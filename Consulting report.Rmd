@@ -1,0 +1,411 @@
+---
+title: "Consulting Project"
+author: |
+  Faculty Supervisor: Masanao Yajima \
+  Teaching Fellow: Shiwen Yang \
+  Group Member: Huaijin Xin, Chenghao Xia, Bolong Xian
+date: "`r Sys.Date()`"
+output: 
+  pdf_document: 
+  latex_engine: xelatex 
+  keep_tex: true 
+header-includes: 
+  - \usepackage{titling} 
+  - \pretitle{\begin{center}\Huge\bfseries} 
+  - \posttitle{\end{center}} 
+  - \preauthor{\begin{center}\Large} 
+  - \postauthor{\end{center}} 
+  - \usepackage{fancyhdr} 
+  - \pagestyle{fancy} 
+  - \fancyfoot[C]{\thepage}
+---
+
+# Introduction
+
+The topic of this consulting project is gene distribution in Entorhinal Cortex. Entorhinal Cortex is anatomically positioned between the neocortex and the hippocampus, and its major role is to bridge information exchange between the two regions. Our client, Ana Morello who is a graduate student at department of Anatomy & Neurobiology in School of Medicine in Boston University, recently is doing research about the gene distribution of cells in EC region. They took a monkey’s brain and cut it into slices to have several layers of EC section. 
+
+She utilized a technique called in-situ hybridization to dye different genes into different colors. In-situ hybridization is a powerful technique used in molecular biology to detect and localize specific DNA or RNA sequences within a tissue section or cell sample. This method involves hybridizing a labeled complementary DNA or RNA probe to the target nucleic acid sequence within the tissue or cells. The probe's label, which can be radioactive or fluorescent, allows for the visualization of the hybridization location, thereby indicating where the specific sequences of interest are expressed within the sample. The specific technique she utilizes is called the RNAscope Multiplex Fluorescent Assay v2 which is a more advanced version of in-situ hybridization designed specifically for the simultaneous detection of multiple RNA targets within a single sample. This technique employs fluorescent labeling, enabling researchers to visualize and quantify the expression of several different RNA molecules at once. The "multiplex" nature of the assay allows for the co-localization of different RNA species within the same sample, providing a comprehensive understanding of gene expression patterns and interactions. Different fluorescent dyes for multiplex fluorescence imaging:  Opal 520, 570, 620, 690.  Number represents the wavelength in nanometer of light and those also represent different genes in the datasets. The measurement she got is fluorescent intensity which is A measure of the amount of fluorescence emitted by a sample. Fluorescence is a phenomenon where certain molecules absorb light (photons) at one wavelength and then re-emit light at a longer wavelength. Higher the Fluorescent Intensity means higher the concentration of certain gene in the selected cell.
+
+The datasets we get are 3 layers of different fluorescent intensity measures from the reflection of different wavelengths (520, 570, 620, 690) in different cells and the datasets also consists of the horizontal distance between the cell and the edge of the slice of the EC region. And it also has a column which represents which of the 4 genes is positive for this cell. There are still lots of variables in the raw data that we did not use in this project such as the x axis and y axis of the cell.
+
+The goal of the project is firstly count the number of positive cells for different genes, secondly show the correlation between different genes, thirdly show the distribution of four type of genes, and lastly find the relationship of cells between each layers.
+
+# Data Cleaning
+
+We have divide the three layers into two parts, one is the data that all cells contain Opal_520, the other dataset have all cells whether it contains Opal_520 or not. Most of the time, we use the data with all cells contain Opal_520. Here is an example of head 5 rows of the data.
+
+| Class           | Opal_520 | Opal_570 |Opal_620 | Opal_690 |  Distance   |
+|-----------------|----------|----------|---------|----------|-------------|
+| 520:570:690     |  0.3483  |  0.1596  |  0.0225 |  0.1164  |  2871.8301  |
+| 520:570:690     |  0.2152  |  0.1041  |  0.0196 |  0.1136  |  2866.8936  |
+| 520:570:690     |  0.5518  |  0.0258  |  0.016  |  0.2296  |  2861.261   |
+| 520:690         |  0.4816  |  0.0202  |  0.02   |  0.3153  |  2868.6372  |
+| 520:570         |  0.2459  |  0.1088  |  0.0211 |  0.0229  |  2918.8682  |
+
+In another dataset, we check the existence of genes in the cell and add four columns with boolean output. We just use this dataset with 3D plot. Here is an example of head 5 rows of the data.
+
+|  MFI520  |  MFI570  |  MFI620 |  MFI690  |    dist     |  IND520  |  IND570  |  IND620 |  IND690  | 
+|----------|----------|---------|----------|-------------|----------|----------|---------|----------|
+|  0.3483  |  0.1596  |  0.0225 |  0.1164  |  2871.8301  |   TRUE   |   TRUE   |  FALSE  |   TRUE   | 
+|  0.2152  |  0.1041  |  0.0196 |  0.1136  |  2866.8936  |   TRUE   |   TRUE   |  FALSE  |   TRUE   | 
+|  0.5518  |  0.0258  |  0.016  |  0.2296  |  2861.261   |   TRUE   |   TRUE   |  FALSE  |   TRUE   |  
+|  0.4816  |  0.0202  |  0.02   |  0.3153  |  2868.6372  |   TRUE   |  FALSE   |  FALSE  |   TRUE   |  
+|  0.2459  |  0.1088  |  0.0211 |  0.0229  |  2918.8682  |   TRUE   |   TRUE   |  FALSE  |   FALSE  |  
+
+Both of the data clean the value with fluorescent intensity equals 0.
+
+```{r}
+#| label: Load libraries
+#| warning: false
+#| message: false
+#| echo: false
+library(ggplot2)
+library(tidyverse)
+library(esquisse)
+library(stringr)
+library(gridExtra)
+library(plotly)
+library(ComplexUpset)
+library(UpSetR)
+```
+
+```{r}
+#| warning: false
+#| message: false
+#| echo: false
+AMM12_4<-read.csv("AMM12_4DetectionsL2.csv",header=TRUE)
+AMM12_5<-read.csv("AMM12_5DetectionsL2.csv",header=TRUE)
+AMM20_5<-read.csv("AMM20_5DetectionsL2.csv",header=TRUE)
+
+AMM12_4 <- AMM12_4[c("Name","Cell..Opal.520.mean","Cell..Opal.570.mean", "Cell..Opal.620.mean", "Cell..Opal.690.mean" , "Distance.to.annotation.with.line.µm")]
+colnames(AMM12_4) <- c("Name", "MFI520", "MFI570", "MFI620", "MFI690", "dist")
+
+
+AMM12_4$'IND520' <- grepl("Opal 520", AMM12_4$Name)
+AMM12_4$'IND570' <- grepl("Opal 570", AMM12_4$Name)
+AMM12_4$'IND620' <- grepl("Opal 620", AMM12_4$Name)
+AMM12_4$'IND690' <- grepl("Opal 690", AMM12_4$Name)
+
+AMM12_4 <- AMM12_4[,-1]
+
+AMM12_4 <- filter(AMM12_4, MFI520 != 0 & MFI570 != 0 & MFI620 != 0 & MFI690 != 0)
+
+log_FI <- log(AMM12_4[,1:5])
+
+AMM12_5 <- AMM12_5[c("Name","Cell..Opal.520.mean","Cell..Opal.570.mean", "Cell..Opal.620.mean", "Cell..Opal.690.mean" , "Distance.to.annotation.with.line.µm")]
+colnames(AMM12_5) <- c("Name", "MFI520", "MFI570", "MFI620", "MFI690", "dist")
+
+
+AMM12_5$'IND520' <- grepl("Opal 520", AMM12_5$Name)
+AMM12_5$'IND570' <- grepl("Opal 570", AMM12_5$Name)
+AMM12_5$'IND620' <- grepl("Opal 620", AMM12_5$Name)
+AMM12_5$'IND690' <- grepl("Opal 690", AMM12_5$Name)
+
+AMM12_5 <- AMM12_5[,-1]
+
+AMM12_5 <- filter(AMM12_5, MFI520 != 0 & MFI570 != 0 & MFI620 != 0 & MFI690 != 0)
+
+log_FI2 <- log(AMM12_5[,1:5])
+
+AMM20_5 <- AMM20_5[c("Name","Cell..Opal.520.mean","Cell..Opal.570.mean", "Cell..Opal.620.mean", "Cell..Opal.690.mean" , "Distance.to.annotation.with.line.µm")]
+colnames(AMM20_5) <- c("Name", "MFI520", "MFI570", "MFI620", "MFI690", "dist")
+
+
+AMM20_5$'IND520' <- grepl("Opal 520", AMM20_5$Name)
+AMM20_5$'IND570' <- grepl("Opal 570", AMM20_5$Name)
+AMM20_5$'IND620' <- grepl("Opal 620", AMM20_5$Name)
+AMM20_5$'IND690' <- grepl("Opal 690", AMM20_5$Name)
+
+AMM20_5 <- AMM20_5[,-1]
+
+AMM20_5 <- filter(AMM20_5, MFI520 != 0 & MFI570 != 0 & MFI620 != 0 & MFI690 != 0)
+
+log_FI3 <- log(AMM20_5[,1:5])
+```
+
+# Visualization
+
+
+```{r}
+#| warning: false
+#| message: false
+#| echo: false
+layer20_5<-read.csv("AMM20_5.csv",header = TRUE)
+layer12_4<-read.csv("AMM12_4.csv",header = TRUE)
+layer12_5<-read.csv("AMM12_5.csv",header = TRUE)
+layer20_5 <- filter(layer20_5, Opal_520 != 0 & Opal_570 != 0 & Opal_620 != 0 & Opal_690 != 0)
+layer12_4 <- filter(layer12_4, Opal_520 != 0 & Opal_570 != 0 & Opal_620 != 0 & Opal_690 != 0)
+layer12_5 <- filter(layer12_5, Opal_520 != 0 & Opal_570 != 0 & Opal_620 != 0 & Opal_690 != 0)
+
+```
+
+## Upset Plot
+
+We use the Upset plot to see the distribution for three layers. 
+
+```{r, fig.height=4, out.height='50%'}
+#| warning: false
+#| message: false
+#| echo: false
+layer20_5 <- layer20_5 %>%
+  mutate(`520` = ifelse(grepl("520", layer20_5[["Class"]]), 1, 0),
+         `570` = ifelse(grepl("570", layer20_5[["Class"]]), 1, 0),
+         `620` = ifelse(grepl("620", layer20_5[["Class"]]), 1, 0),
+         `690` = ifelse(grepl("690", layer20_5[["Class"]]), 1, 0))
+
+upset20_5<-upset(layer20_5, sets = c("520", "570", "620", "690"), mainbar.y.label = "Frequency", main.bar.color = "red")
+
+layer12_4 <- layer12_4 %>%
+  mutate(`520` = ifelse(grepl("520", layer12_4[["Class"]]), 1, 0),
+         `570` = ifelse(grepl("570", layer12_4[["Class"]]), 1, 0),
+         `620` = ifelse(grepl("620", layer12_4[["Class"]]), 1, 0),
+         `690` = ifelse(grepl("690", layer12_4[["Class"]]), 1, 0))
+
+upset12_4<- upset(layer12_4, sets = c("520", "570", "620", "690"),mainbar.y.label = "Frequency", main.bar.color = "red")
+layer12_5 <- layer12_5 %>%
+  mutate(`520` = ifelse(grepl("520", layer12_5[["Class"]]), 1, 0),
+         `570` = ifelse(grepl("570", layer12_5[["Class"]]), 1, 0),
+         `620` = ifelse(grepl("620", layer12_5[["Class"]]), 1, 0),
+         `690` = ifelse(grepl("690", layer12_5[["Class"]]), 1, 0))
+
+upset12_5<-upset(layer12_5, sets = c("520", "570", "620", "690"),mainbar.y.label = "Frequency", main.bar.color = "red")
+```
+
+```{r, fig.height=4, out.height='50%'}
+#| warning: false
+#| message: false
+#| echo: false
+upset20_5
+```
+
+The figure above shows the distribution for layer20_5. We use the data all cells contain Opal_520, so the number of Opal_520 implies the number of cells in the data which is around 600. And we can see the cell with 520:690 has the highest frequency with the number 252 in the layer. 
+
+```{r, fig.height=4, out.height='50%'}
+#| warning: false
+#| message: false
+#| echo: false
+upset12_4
+```
+
+The figure above shows the distribution for layer12_4. We use the data all cells contain Opal_520, so the number of Opal_520 implies the number of cells in the data which is around 1000. And we can see the cell with 520:690 has the highest frequency with the number 415 in the layer. 
+
+```{r, fig.height=4, out.height='50%'}
+#| warning: false
+#| message: false
+#| echo: false
+upset12_5
+```
+
+The figure above shows the distribution for layer12_5. We use the data all cells contain Opal_520, so the number of Opal_520 implies the number of cells in the data which is around 2000. And we can see the cell with 520:570:690 has the highest frequency with the number 744 in the layer. 
+
+As a summary with this three figures, we can see that Opal_690 appears more than Opal_570 and Opal_620. In layer20_5 and layer12_4, we both have 520:690 with the highest frequency in the layer. But in layer12_5, though 520:690 has a big frequency value, 520:570:690 has the biggest frequency value in this layer. Interestingly, Opal_520 and Opal_690 appears very often. So in the next step, we want to see the relationship between Opal_690 and Opal_520.   
+
+## Correlation 
+
+We use the Scatterplot to see the distribution of Opal_520 and Opal_690. In the plot, the x axis shows the log value of the fluorescent intensity for Opal_520, the y axis shows the log value of the fluorescent intensity for Opal_690.
+
+```{r, fig.height=4, out.height='50%'}
+#| warning: false
+#| message: false
+#| echo: false
+corr20_5<-ggplot(layer20_5) +
+  aes(x = log(Opal_520), y = log(Opal_690),color = Class) +
+  geom_point(shape = "circle", size = 1L) +
+  scale_color_hue(direction = 1) +
+  labs(
+    x = "Log of FI for 520",
+    y = "Log of FI for 690",
+    title = "520 Versus 690 (With Logarithm) in layer20_5"
+  ) +
+  theme(axis.text=element_text(size=10),
+        axis.title=element_text(size=12))+
+  facet_wrap(vars(Class))
+
+corr12_4<-ggplot(layer12_4) +
+  aes(x = log(Opal_520), y = log(Opal_690),color = Class) +
+  geom_point(shape = "circle", size = 1L) +
+  scale_color_hue(direction = 1) +
+  labs(
+    x = "Log of FI for 520",
+    y = "Log of FI for 690",
+    title = "520 Versus 690 (With Logarithm) in layer12_4"
+  ) +
+  theme(axis.text=element_text(size=10),
+        axis.title=element_text(size=12))+
+  facet_wrap(vars(Class))
+
+corr12_5<-ggplot(layer12_5) +
+  aes(x = log(Opal_520), y = log(Opal_690),color = Class) +
+  geom_point(shape = "circle", size = 1L) +
+  scale_color_hue(direction = 1) +
+  labs(
+    x = "Log of FI for 520",
+    y = "Log of FI for 690",
+    title = "520 Versus 690 (With Logarithm) in layer12_5"
+  ) +
+  theme(axis.text=element_text(size=10),
+        axis.title=element_text(size=12))+
+  facet_wrap(vars(Class))
+```
+
+```{r, fig.height=4, out.height='50%'}
+#| warning: false
+#| message: false
+#| echo: false
+corr12_4
+```
+
+```{r, fig.height=4, out.height='50%'}
+#| warning: false
+#| message: false
+#| echo: false
+corr12_5
+```
+
+```{r, fig.height=4, out.height='50%'}
+#| warning: false
+#| message: false
+#| echo: false
+corr20_5
+```
+
+For the figures above, we can see the cells contain Opal_690 will have a high value with Opal_690 which makes sense. In layer12_4 and layer12_5, the cell 520:570:690 and 520:690 shows a positive relationship for Opal_520 and Opal_690. When the value of Opal_520 increases, the value of Opal_690 also increases. In layer20_5, we can not find significant correlation  between Opal_520 and Opal _690. We are not sure if this correlation is common for all the layers or only happens in layer12_4 and layer12_5, since there is a slight positive correlation in layer20_5 but not as significant as layer12_4 and layer12_5.
+
+## Boxplot
+
+```{r, fig.height=4, out.height='50%'}
+#| warning: false
+#| message: false
+#| echo: false
+box12_4<-ggplot(layer12_4) +
+  aes(x = Class, y =log(Opal_690)) +
+  geom_boxplot(fill = "red") +
+  labs(
+    x = "Type of cell",
+    y = "Log of FI for 690",
+    title = "690 in layer12_4"
+  ) +
+theme(axis.text=element_text(size=8L),
+      axis.title=element_text(size=14L),
+      axis.text.x =element_text(angle = 45,vjust = 1,hjust = 1))
+
+box12_5<-ggplot(layer12_5) +
+  aes(x = Class, y =log(Opal_690)) +
+  geom_boxplot(fill = "red") +
+  labs(
+    x = "Type of cell",
+    y = "Log of FI for 690",
+    title = "690 in layer12_5"
+  ) +
+theme(axis.text=element_text(size=8L),
+      axis.title=element_text(size=14L),
+      axis.text.x =element_text(angle = 45,vjust = 1,hjust = 1))
+
+box20_5<-ggplot(layer20_5) +
+  aes(x = Class, y =log(Opal_690)) +
+  geom_boxplot(fill = "red") +
+  labs(
+    x = "Type of cell",
+    y = "Log of FI for 690",
+    title = "690 in layer20_5"
+  ) +
+theme(axis.text=element_text(size=8L),
+      axis.title=element_text(size=14L),
+      axis.text.x =element_text(angle = 45,vjust = 1,hjust = 1))
+```
+
+```{r, fig.height=4, out.height='50%'}
+#| warning: false
+#| message: false
+#| echo: false
+box12_4
+```
+
+```{r, fig.height=4, out.height='50%'}
+#| warning: false
+#| message: false
+#| echo: false
+box12_5
+```
+
+```{r, fig.height=4, out.height='50%'}
+#| warning: false
+#| message: false
+#| echo: false
+box20_5
+```
+
+For the figures above, we can see the cells contain Opal_690 will have significant higher value than the cells don't contain Opal_690.
+
+## Distribution of Distance and Opal_690 
+
+Since Opal_690 has some correlation with Opal_520, we want to find if there is any specific correlation for Opal_690 and Distance. In the plot, the x axis shows the log value of the fluorescent intensity for Opal_690, the y axis shows the log value of the Distance.
+
+```{r, fig.height=4, out.height='50%'}
+#| warning: false
+#| message: false
+#| echo: false
+dist12_4<-ggplot(layer12_4) +
+  aes(x =  log(Opal_690), y = log(Distance),color = Class) +
+  geom_point(shape = "circle", size = 1L) +
+  scale_color_hue(direction = 1) +
+  labs(
+    x = "Log of FI for 690",
+    y = "Log of Distance",
+    title = "Distribution for 690 in layer12_4"
+  ) +
+  theme(axis.text=element_text(size=12),
+        axis.title=element_text(size=14))+
+  facet_wrap(vars(Class))
+
+dist12_5<-ggplot(layer12_5) +
+  aes(x =  log(Opal_690), y = log(Distance),color = Class) +
+  geom_point(shape = "circle", size = 1L) +
+  scale_color_hue(direction = 1) +
+  labs(
+    x = "Log of FI for 690",
+    y = "Log of Distance",
+    title = "Distribution for 690 in layer12_5"
+  ) +
+  theme(axis.text=element_text(size=12),
+        axis.title=element_text(size=14))+
+  facet_wrap(vars(Class))
+
+dist20_5<-ggplot(layer20_5) +
+  aes(x =  log(Opal_690), y = log(Distance),color = Class) +
+  geom_point(shape = "circle", size = 1L) +
+  scale_color_hue(direction = 1) +
+  labs(
+    x = "Log of FI for 690",
+    y = "Log of Distance",
+    title = "Distribution for 690 in layer20_5"
+  ) +
+  theme(axis.text=element_text(size=12),
+        axis.title=element_text(size=14))+
+  facet_wrap(vars(Class))
+```
+
+```{r, fig.height=4, out.height='50%'}
+#| warning: false
+#| message: false
+#| echo: false
+dist12_4
+```
+
+```{r, fig.height=4, out.height='50%'}
+#| warning: false
+#| message: false
+#| echo: false
+dist12_5
+```
+
+```{r, fig.height=4, out.height='50%'}
+#| warning: false
+#| message: false
+#| echo: false
+dist20_5
+```
+
+For the figures above, we focus on the cells with 520:690, 520:570:690, 520:620:690, and 520:57:620:690. It is most significant for layer12_5 that when the value of Opal_690 is small, the distance has a big range from low to high. But when the value of Opal_690 becomes bigger, we can see that the distance shrinks to a low range wiht only big value. For layer20_5, we can see that it has a small range with big value of distance whether the value of Opal_690 is big or small.
+
+
