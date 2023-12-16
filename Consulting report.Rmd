@@ -72,6 +72,7 @@ library(rgl)
 library(webshot)
 library(IRdisplay)
 library(png)
+library(pheatmap)
 ```
 
 ```{r}
@@ -223,9 +224,10 @@ corr12_4<-ggplot(layer12_4) +
     title = "520 Versus 690 (With Logarithm) in layer12_4"
   ) +
   theme(axis.text=element_text(size=10),
-        axis.title=element_text(size=12))+
+        axis.title=element_text(size=12),
+        plot.title = element_text(hjust = 0.5))+
   facet_wrap(vars(Class))
-
+      
 corr12_5<-ggplot(layer12_5) +
   aes(x = log(Opal_520), y = log(Opal_690),color = Class) +
   geom_point(shape = "circle", size = 1L) +
@@ -236,7 +238,8 @@ corr12_5<-ggplot(layer12_5) +
     title = "520 Versus 690 (With Logarithm) in layer12_5"
   ) +
   theme(axis.text=element_text(size=10),
-        axis.title=element_text(size=12))+
+        axis.title=element_text(size=12),
+        plot.title = element_text(hjust = 0.5))+
   facet_wrap(vars(Class))
 
 corr20_5<-ggplot(layer20_5) +
@@ -249,7 +252,8 @@ corr20_5<-ggplot(layer20_5) +
     title = "520 Versus 690 (With Logarithm) in layer20_5"
   ) +
   theme(axis.text=element_text(size=10),
-        axis.title=element_text(size=12))+
+        axis.title=element_text(size=12),
+        plot.title = element_text(hjust = 0.5))+
   facet_wrap(vars(Class))
 ```
 
@@ -276,147 +280,62 @@ corr20_5
 
 Based on the figures above, it is evident that cells containing Opal_690 tend to exhibit higher values for Opal_690, which aligns with expectations. In both layer12_4 and layer12_5, the cells with combinations 520:570:690 and 520:690 demonstrate a positive correlation between Opal_520 and Opal_690. As the value of Opal_520 increases, there is a corresponding increase in the value of Opal_690. However, in layer20_5, a notable correlation between Opal_520 and Opal_690 is not readily apparent. The presence of a subtle positive correlation in layer20_5 raises the question of whether this correlation is a common feature across all layers or if it is specific to layer12_4 and layer12_5. Further investigation is required to ascertain whether the observed correlation is consistent across all layers or if it exhibits variation, with layer12_4 and layer12_5 demonstrating a more pronounced association compared to layer20_5.
 
-## Boxplot
+## Distribution for Distance and Opal_520 
 
-The utilization of boxplots offers a comprehensive and insightful analysis of the distribution of Opal_690 across eight distinct cell types. Boxplots provide a visual summary of the central tendency, spread, and potential outliers within each cell type, allowing for the efficient comparison of distributional characteristics. By employing boxplots, we can discern not only the variations in Opal_690 expression across different cell types but also gain a nuanced understanding of the overall distributional patterns and potential heterogeneity within each cell type.
-
-```{r, fig.height=4, out.height='50%'}
-#| warning: false
-#| message: false
-#| echo: false
-box12_4<-ggplot(layer12_4) +
-  aes(x = Class, y =log(Opal_690)) +
-  geom_boxplot(fill = "red") +
-  labs(
-    x = "Type of cell",
-    y = "Log of FI for 690",
-    title = "Distribution of 690 in layer12_4"
-  ) +
-theme(axis.text=element_text(size=8L),
-      axis.title=element_text(size=14L),
-      axis.text.x =element_text(angle = 45,vjust = 1,hjust = 1),
-      plot.title = element_text(hjust = 0.5))
-
-box12_5<-ggplot(layer12_5) +
-  aes(x = Class, y =log(Opal_690)) +
-  geom_boxplot(fill = "red") +
-  labs(
-    x = "Type of cell",
-    y = "Log of FI for 690",
-    title = "Distribution of 690 in layer12_5"
-  ) +
-theme(axis.text=element_text(size=8L),
-      axis.title=element_text(size=14L),
-      axis.text.x =element_text(angle = 45,vjust = 1,hjust = 1),
-      plot.title = element_text(hjust = 0.5))
-
-box20_5<-ggplot(layer20_5) +
-  aes(x = Class, y =log(Opal_690)) +
-  geom_boxplot(fill = "red") +
-  labs(
-    x = "Type of cell",
-    y = "Log of FI for 690",
-    title = "Distribution of 690 in layer20_5"
-  ) +
-theme(axis.text=element_text(size=8L),
-      axis.title=element_text(size=14L),
-      axis.text.x =element_text(angle = 45,vjust = 1,hjust = 1),
-      plot.title = element_text(hjust = 0.5))
-```
-
-```{r, fig.height=4, out.height='50%'}
-#| warning: false
-#| message: false
-#| echo: false
-box12_4
-```
-
-```{r, fig.height=4, out.height='50%'}
-#| warning: false
-#| message: false
-#| echo: false
-box12_5
-```
-
-```{r, fig.height=4, out.height='50%'}
-#| warning: false
-#| message: false
-#| echo: false
-box20_5
-```
-
-The observed figures clearly indicate a substantial distinction between cells containing Opal_690 and those without it. Specifically, cells that include Opal_690 exhibit significantly higher values compared to their counterparts lacking Opal_690. This stark contrast underscores the impact of Opal_690 on the measured values, suggesting a discernible influence of Opal_690 presence on the observed fluorescent intensities. The visual representation of this difference in values between the two groups provides a clear and immediate understanding of the impact of Opal_690 on the distribution within the dataset.
-
-## Distribution for Distance and Opal_690 
-
-Given that Opal_690 exhibits some correlation with Opal_520, we aim to explore any specific correlation between Opal_690 and Distance. In the plot, the x-axis represents the logarithmic values of the fluorescent intensity for Opal_690, while the y-axis illustrates the logarithmic values of the Distance.
+Given that Opal_690 exhibits some correlation with Opal_520, we aim to explore any specific correlation between Opal_520 and Distance. The reason we use Opal_520 is because Opal_520 and Opal_690 are highly correlated. Opal_520 is a better choice since it is the indicator gene for the region. In the plot, the x-axis represents the value of the Distance, while the y-axis illustrates the logarithmic values of the fluorescent intensity for Opal_520.
 
 ```{r, fig.height=4, out.height='50%'}
 #| warning: false
 #| message: false
 #| echo: false
 dist12_4<-ggplot(layer12_4) +
-  aes(x =  log(Opal_690), y = log(Distance),color = Class) +
+  aes(x =  Distance, y = log(Opal_520)) +
   geom_point(shape = "circle", size = 1L) +
   scale_color_hue(direction = 1) +
   labs(
-    x = "Log of FI for 690",
-    y = "Log of Distance",
-    title = "Distribution for 690 in layer12_4"
+    x = "Distance",
+    y = "Log of FI for 520",
+    title = "Distribution for 520 in layer12_4"
   ) +
-  theme(axis.text=element_text(size=12),
-        axis.title=element_text(size=14))+
-  facet_wrap(vars(Class))
+  theme(axis.text=element_text(size=8),
+        axis.title=element_text(size=10),
+        plot.title = element_text(hjust = 0.5))
 
 dist12_5<-ggplot(layer12_5) +
-  aes(x =  log(Opal_690), y = log(Distance),color = Class) +
+  aes(x =  Distance, y = log(Opal_520)) +
   geom_point(shape = "circle", size = 1L) +
   scale_color_hue(direction = 1) +
   labs(
-    x = "Log of FI for 690",
-    y = "Log of Distance",
-    title = "Distribution for 690 in layer12_5"
+    x = "Distance",
+    y = "Log of FI for 520",
+    title = "Distribution for 520 in layer12_5"
   ) +
-  theme(axis.text=element_text(size=12),
-        axis.title=element_text(size=14))+
-  facet_wrap(vars(Class))
+  theme(axis.text=element_text(size=8),
+        axis.title=element_text(size=10),
+        plot.title = element_text(hjust = 0.5))
 
 dist20_5<-ggplot(layer20_5) +
-  aes(x =  log(Opal_690), y = log(Distance),color = Class) +
+  aes(x =  Distance, y = log(Opal_520)) +
   geom_point(shape = "circle", size = 1L) +
   scale_color_hue(direction = 1) +
   labs(
-    x = "Log of FI for 690",
-    y = "Log of Distance",
-    title = "Distribution for 690 in layer20_5"
+    x = "Distance",
+    y = "Log of FI for 520",
+    title = "Distribution for 520 in layer20_5"
   ) +
-  theme(axis.text=element_text(size=12),
-        axis.title=element_text(size=14))+
-  facet_wrap(vars(Class))
+  theme(axis.text=element_text(size=8),
+        axis.title=element_text(size=10),
+        plot.title = element_text(hjust = 0.5))
 ```
 
-```{r, fig.height=4, out.height='50%'}
+```{r}
 #| warning: false
 #| message: false
 #| echo: false
-dist12_4
+grid.arrange(dist12_4,dist12_5,dist20_5,nrow=3)
 ```
 
-```{r, fig.height=4, out.height='50%'}
-#| warning: false
-#| message: false
-#| echo: false
-dist12_5
-```
-
-```{r, fig.height=4, out.height='50%'}
-#| warning: false
-#| message: false
-#| echo: false
-dist20_5
-```
-
-In the above figures, our focus centers on cells with combinations 520:690, 520:570:690, 520:620:690, and 520:57:620:690. Notably, in layer12_5, a noteworthy pattern emerges, indicating that when the value of Opal_690 is small, the distance exhibits a considerable range from low to high. However, as the value of Opal_690 increases, the distance tends to contract into a narrower range characterized by larger values. This trend suggests a distinctive relationship between Opal_690 and distance in layer12_5. On the other hand, for layer20_5, a distinct pattern is observed, wherein a small range with substantial distance values prevails regardless of whether the value of Opal_690 is high or low. This disparity in patterns underscores the importance of considering layer-specific nuances in interpreting the relationship between Opal_690 and distance.
+In the figure above, the distribution of Opal_520 varies significantly across different layers. Specifically, in layer12_4, Opal_520 exhibits high density within the distance range of 0 to 1500, with minimal points around 1500 and 2500, and noticeable clusters around 2000 and 3000. Moving to layer12_5, Opal_520 is characterized by consistently high density throughout the entire distance range from 0 to 7000. However, in layer20_5, the points are widely scattered, and no discernible trend is apparent.
 
 ## Heatmap
 
@@ -429,7 +348,7 @@ We also came up with a heat map to indicate the relationship of different genes.
 cor_data <- log_FI[, c("MFI520", "MFI570", "MFI620", "MFI690", "dist")]
 cor_matrix <- cor(cor_data)
 
-heatmap(cor_matrix, 
+pheatmap(cor_matrix, 
          color = colorRampPalette(c("#D73027", "#4575B4", "#91BFDB"))(50), 
          main = "Heatmap of Layer12_4",
          fontsize = 8,
@@ -438,7 +357,7 @@ heatmap(cor_matrix,
 cor_data2 <- log_FI2[, c("MFI520", "MFI570", "MFI620", "MFI690", "dist")]
 cor_matrix2 <- cor(cor_data2)
 
-heatmap(cor_matrix2, 
+pheatmap(cor_matrix2, 
          color = colorRampPalette(c("#D73027", "#4575B4", "#91BFDB"))(50), 
          main = "Heatmap of Layer12_5",
          fontsize = 8,
@@ -447,7 +366,7 @@ heatmap(cor_matrix2,
 cor_data3 <- log_FI3[, c("MFI520", "MFI570", "MFI620", "MFI690", "dist")]
 cor_matrix3 <- cor(cor_data3)
 
-heatmap(cor_matrix3, 
+pheatmap(cor_matrix3, 
          color = colorRampPalette(c("#D73027", "#4575B4", "#91BFDB"))(50), 
          main = "Heatmap of Layer20_5",
          fontsize = 8,
@@ -597,7 +516,7 @@ part20_5
 grid::grid.raster(readPNG("part20_5.png"))
 ```
 
-As removing the cells without 520, some relationships could be observed based on the 3D plots. For example, in Layer 2, As the intensity of 520 raise, the intensity of 690 increases while 570 seems to show a reverse relationship with 520 compared to 690. Also, 620 doesn’t have obvious relationship with other genes. So for further investigation, we decided to remove 620 which is consider meaningless for showing no any trends with the others in these three plots. Instead 520 is included below.
+As removing the cells without 520, some relationships could be observed based on the 3D plots. For example, in Layer12_5, As the intensity of 520 raise, the intensity of 690 increases while 570 seems to show a reverse relationship with 520 compared to 690. Also, 620 doesn’t have obvious relationship with other genes. So for further investigation, we decided to remove 620 which is consider meaningless for showing no any trends with the others in these three plots. Instead 520 is included below.
 
 ```{r, fig.height=4, out.height='50%'}
 #| warning: false
@@ -623,7 +542,7 @@ dis20_5
 grid::grid.raster(readPNG("dis20_5.png"))
 ```
 
-To get 520 involved, the intensity level as colored option is no longer appropriate. Besides intensity level, we thought there might also be some contribution made by distance to the distribution of cells in EC region. So instead of intensity level, we redo the previous process but colored in terms of distance. And we found that In layer 2 as the intensity of 520 decreases, the intensity of 690 also decreases. And as intensity of 520 held constant, the higher the intensity of 690 is the more distant from the edge of EC.
+To get 520 involved, the intensity level as colored option is no longer appropriate. Besides intensity level, we thought there might also be some contribution made by distance to the distribution of cells in EC region. So instead of intensity level, we redo the previous process but colored in terms of distance. And we found that In layer12_5 as the intensity of 520 decreases, the intensity of 690 also decreases. And as intensity of 520 held constant, the higher the intensity of 690 is the more distant from the edge of EC.
 
 Here are only couple examples from each section of plots. We hope these plots would help our client to seek more essential information for their study.
 
@@ -631,8 +550,6 @@ Here are only couple examples from each section of plots. We hope these plots wo
 
 The project’s application of robust statistical methods revealed intricate patterns in gene expression. Notably, a significant correlation between Opal_690 and Opal_520 was found, especially in layers 1 and 2 of the EC. These results highlight the complex interplay of gene expression, which varies distinctly across different layers. Furthermore, the spatial analysis of gene distribution underscored how gene expression intensity is related to proximity to the EC edge, adding a spatial dimension to our understanding of gene distribution. 
 
-Throughout the project, we emphasized the clear communication of complex statistical findings to a diverse audience. This involved transforming technical data into comprehensible insights for both scientific and non-expert stakeholders. The visual aids, crafted by our team members, played a crucial role in making intricate patterns more accessible and understandable, enhancing the impact of our research findings.
+The key to the successful output of this consulting project is the teamwork of our group. Everyone paid attention to what we’re assigned, brainstormed any idea which would be the approach to solve the issues, help generate different plots for the clients to have a better visualization of her interest. The most important statistical skills involved would be the R programming. Most of the time was spent on Rstudio trying to figure out different codes for visualization. Also members learnt some plotting skills which they never knew before during the coding.
 
-The integration of statistical rigor with effective communication strategies was key to the project’s success. Our approach not only deepened the understanding of specific genes in the EC but also exemplified the importance of multidisciplinary collaboration in research. The team’s combined expertise in analysis, visualization, and communication was crucial in delivering a comprehensive and impactful outcome.
-
-In summary, this project exemplifies the power of collaborative research, combining detailed statistical analysis with clear, effective communication. We have not only advanced our understanding of gene distribution in the Entorhinal Cortex but also set a new standard for future interdisciplinary research. Our findings lay the groundwork for further investigations into the roles of these genes in cognitive processes and, potentially, in the pathology of neurological disorders.
+In summary, we have not only came up with some useful results for the clients but also advanced our understanding of what we learnt in class. Hope our findings in the Entorhinal Cortex would give insight and inspire more idea and even breakthroughs in neurology.
