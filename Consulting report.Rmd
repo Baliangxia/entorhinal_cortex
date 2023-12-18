@@ -60,6 +60,7 @@ Both datasets undergo a cleaning process wherein values associated with fluoresc
 #| warning: false
 #| message: false
 #| echo: false
+# Load libraries
 library(ggplot2)
 library(tidyverse)
 library(esquisse)
@@ -79,54 +80,46 @@ library(pheatmap)
 #| warning: false
 #| message: false
 #| echo: false
-AMM12_4<-read.csv("AMM12_4DetectionsL2.csv",header=TRUE)
-AMM12_5<-read.csv("AMM12_5DetectionsL2.csv",header=TRUE)
-AMM20_5<-read.csv("AMM20_5DetectionsL2.csv",header=TRUE)
+# Read and preprocess data
+# Function to read and preprocess data
+read_and_preprocess <- function(file_path) {
+  # Read data from CSV
+  data <- read.csv(file_path, header = TRUE)
+  
+  # Rename columns
+  data <- data[, c("Name", "Cell..Opal.520.mean", "Cell..Opal.570.mean", "Cell..Opal.620.mean", "Cell..Opal.690.mean", "Distance.to.annotation.with.line.µm")]
+  colnames(data) <- c("Name", "MFI520", "MFI570", "MFI620", "MFI690", "dist")
+  
+  # Add indicator columns
+  data$'IND520' <- grepl("Opal 520", data$Name)
+  data$'IND570' <- grepl("Opal 570", data$Name)
+  data$'IND620' <- grepl("Opal 620", data$Name)
+  data$'IND690' <- grepl("Opal 690", data$Name)
+  
+  # Remove unnecessary column
+  data <- data[, -1]
+  
+  # Filter rows
+  data <- filter(data, MFI520 != 0 & MFI570 != 0 & MFI620 != 0 & MFI690 != 0)
+  
+  return(data)
+}
 
-AMM12_4 <- AMM12_4[c("Name","Cell..Opal.520.mean","Cell..Opal.570.mean", "Cell..Opal.620.mean", "Cell..Opal.690.mean" , "Distance.to.annotation.with.line.µm")]
-colnames(AMM12_4) <- c("Name", "MFI520", "MFI570", "MFI620", "MFI690", "dist")
+# Read and preprocess data for each layer
+AMM12_4 <- read_and_preprocess("AMM12_4DetectionsL2.csv")
+AMM12_5 <- read_and_preprocess("AMM12_5DetectionsL2.csv")
+AMM20_5 <- read_and_preprocess("AMM20_5DetectionsL2.csv")
 
+# Function to calculate log-transformed fluorescence intensity
+calculate_log_FI <- function(data) {
+  return(log(data[, 1:5]))
+}
 
-AMM12_4$'IND520' <- grepl("Opal 520", AMM12_4$Name)
-AMM12_4$'IND570' <- grepl("Opal 570", AMM12_4$Name)
-AMM12_4$'IND620' <- grepl("Opal 620", AMM12_4$Name)
-AMM12_4$'IND690' <- grepl("Opal 690", AMM12_4$Name)
+# Calculate log-transformed fluorescence intensity for each layer
+log_FI <- calculate_log_FI(AMM12_4)
+log_FI2 <- calculate_log_FI(AMM12_5)
+log_FI3 <- calculate_log_FI(AMM20_5)
 
-AMM12_4 <- AMM12_4[,-1]
-
-AMM12_4 <- filter(AMM12_4, MFI520 != 0 & MFI570 != 0 & MFI620 != 0 & MFI690 != 0)
-
-log_FI <- log(AMM12_4[,1:5])
-
-AMM12_5 <- AMM12_5[c("Name","Cell..Opal.520.mean","Cell..Opal.570.mean", "Cell..Opal.620.mean", "Cell..Opal.690.mean" , "Distance.to.annotation.with.line.µm")]
-colnames(AMM12_5) <- c("Name", "MFI520", "MFI570", "MFI620", "MFI690", "dist")
-
-
-AMM12_5$'IND520' <- grepl("Opal 520", AMM12_5$Name)
-AMM12_5$'IND570' <- grepl("Opal 570", AMM12_5$Name)
-AMM12_5$'IND620' <- grepl("Opal 620", AMM12_5$Name)
-AMM12_5$'IND690' <- grepl("Opal 690", AMM12_5$Name)
-
-AMM12_5 <- AMM12_5[,-1]
-
-AMM12_5 <- filter(AMM12_5, MFI520 != 0 & MFI570 != 0 & MFI620 != 0 & MFI690 != 0)
-
-log_FI2 <- log(AMM12_5[,1:5])
-
-AMM20_5 <- AMM20_5[c("Name","Cell..Opal.520.mean","Cell..Opal.570.mean", "Cell..Opal.620.mean", "Cell..Opal.690.mean" , "Distance.to.annotation.with.line.µm")]
-colnames(AMM20_5) <- c("Name", "MFI520", "MFI570", "MFI620", "MFI690", "dist")
-
-
-AMM20_5$'IND520' <- grepl("Opal 520", AMM20_5$Name)
-AMM20_5$'IND570' <- grepl("Opal 570", AMM20_5$Name)
-AMM20_5$'IND620' <- grepl("Opal 620", AMM20_5$Name)
-AMM20_5$'IND690' <- grepl("Opal 690", AMM20_5$Name)
-
-AMM20_5 <- AMM20_5[,-1]
-
-AMM20_5 <- filter(AMM20_5, MFI520 != 0 & MFI570 != 0 & MFI620 != 0 & MFI690 != 0)
-
-log_FI3 <- log(AMM20_5[,1:5])
 ```
 
 # Visualization
@@ -136,9 +129,12 @@ log_FI3 <- log(AMM20_5[,1:5])
 #| warning: false
 #| message: false
 #| echo: false
+# Read and preprocess data
 layer20_5<-read.csv("AMM20_5.csv",header = TRUE)
 layer12_4<-read.csv("AMM12_4.csv",header = TRUE)
 layer12_5<-read.csv("AMM12_5.csv",header = TRUE)
+
+# Filter rows
 layer20_5 <- filter(layer20_5, Opal_520 != 0 & Opal_570 != 0 & Opal_620 != 0 & Opal_690 != 0)
 layer12_4 <- filter(layer12_4, Opal_520 != 0 & Opal_570 != 0 & Opal_620 != 0 & Opal_690 != 0)
 layer12_5 <- filter(layer12_5, Opal_520 != 0 & Opal_570 != 0 & Opal_620 != 0 & Opal_690 != 0)
@@ -153,35 +149,42 @@ We employ the UpSet plot, a powerful visualization tool, to gain insights into t
 #| warning: false
 #| message: false
 #| echo: false
-layer12_4 <- layer12_4 %>%
-  mutate(`520` = ifelse(grepl("520", layer12_4[["Class"]]), 1, 0),
-         `570` = ifelse(grepl("570", layer12_4[["Class"]]), 1, 0),
-         `620` = ifelse(grepl("620", layer12_4[["Class"]]), 1, 0),
-         `690` = ifelse(grepl("690", layer12_4[["Class"]]), 1, 0))
+# Function to add indicator columns for specific wavelengths
+add_indicator_columns <- function(data, wavelength) {
+  data %>%
+    mutate(
+      `520` = ifelse(grepl("520", data[["Class"]]), 1, 0),
+      `570` = ifelse(grepl("570", data[["Class"]]), 1, 0),
+      `620` = ifelse(grepl("620", data[["Class"]]), 1, 0),
+      `690` = ifelse(grepl("690", data[["Class"]]), 1, 0)
+    )
+}
 
-upset12_4<- upset(layer12_4, sets = c("520", "570", "620", "690"),mainbar.y.label = "Frequency", main.bar.color = "red")
-layer12_5 <- layer12_5 %>%
-  mutate(`520` = ifelse(grepl("520", layer12_5[["Class"]]), 1, 0),
-         `570` = ifelse(grepl("570", layer12_5[["Class"]]), 1, 0),
-         `620` = ifelse(grepl("620", layer12_5[["Class"]]), 1, 0),
-         `690` = ifelse(grepl("690", layer12_5[["Class"]]), 1, 0))
+# Function to create upset plot
+create_upset_plot <- function(data, sets) {
+  upset(data, sets = sets, mainbar.y.label = "Frequency", main.bar.color = "red")
+}
 
-upset12_5<-upset(layer12_5, sets = c("520", "570", "620", "690"),mainbar.y.label = "Frequency", main.bar.color = "red")
+# Apply transformations to layer12_4
+layer12_4 <- add_indicator_columns(layer12_4, c("520", "570", "620", "690"))
+upset12_4 <- create_upset_plot(layer12_4, c("520", "570", "620", "690"))
 
-layer20_5 <- layer20_5 %>%
-  mutate(`520` = ifelse(grepl("520", layer20_5[["Class"]]), 1, 0),
-         `570` = ifelse(grepl("570", layer20_5[["Class"]]), 1, 0),
-         `620` = ifelse(grepl("620", layer20_5[["Class"]]), 1, 0),
-         `690` = ifelse(grepl("690", layer20_5[["Class"]]), 1, 0))
+# Apply transformations to layer12_5
+layer12_5 <- add_indicator_columns(layer12_5, c("520", "570", "620", "690"))
+upset12_5 <- create_upset_plot(layer12_5, c("520", "570", "620", "690"))
 
-upset20_5<-upset(layer20_5, sets = c("520", "570", "620", "690"), mainbar.y.label = "Frequency", main.bar.color = "red")
+# Apply transformations to layer20_5
+layer20_5 <- add_indicator_columns(layer20_5, c("520", "570", "620", "690"))
+upset20_5 <- create_upset_plot(layer20_5, c("520", "570", "620", "690"))
+
 ```
 
 ```{r, fig.height=4, out.height='50%'}
 #| warning: false
 #| message: false
 #| echo: false
-upset12_4
+# Print upset plot for layer12_4
+print(upset12_4)
 ```
 
 The above figure illustrates the distribution for layer12_4. By employing data that includes only cells containing Opal_520, the count of Opal_520 serves as a direct indicator of the number of cells in the dataset, totaling around 1000. Notably, within this layer, the cell combination 520:690 exhibits the highest frequency, with a count of 415.
@@ -190,7 +193,8 @@ The above figure illustrates the distribution for layer12_4. By employing data t
 #| warning: false
 #| message: false
 #| echo: false
-upset12_5
+# Print upset plot for layer12_5
+print(upset12_5)
 ```
 
 The figure above depicts the distribution for layer12_5. Utilizing data that exclusively includes cells containing Opal_520, the count of Opal_520 directly represents the number of cells in the dataset, totaling approximately 2000. Notably, within this layer, the cell combination 520:570:690 exhibits the highest frequency, with a count of 744.
@@ -199,7 +203,8 @@ The figure above depicts the distribution for layer12_5. Utilizing data that exc
 #| warning: false
 #| message: false
 #| echo: false
-upset20_5
+# Print upset plot for layer20_5
+print(upset20_5)
 ```
 
 The figure above illustrates the distribution for layer20_5. Utilizing data comprising cells with Opal_520, the count of Opal_520 directly corresponds to the number of cells in the dataset, totaling approximately 600. Notably, the cell combination 520:690 exhibits the highest frequency, with a count of 252 within the layer.
@@ -214,68 +219,54 @@ We employ a scatterplot to visually analyze the distribution of Opal_520 and Opa
 #| warning: false
 #| message: false
 #| echo: false
-corr12_4<-ggplot(layer12_4) +
-  aes(x = log(Opal_520), y = log(Opal_690),color = Class) +
-  geom_point(shape = "circle", size = 1L) +
-  scale_color_hue(direction = 1) +
-  labs(
-    x = "Log of FI for 520",
-    y = "Log of FI for 690",
-    title = "520 Versus 690 (With Logarithm) in layer12_4"
-  ) +
-  theme(axis.text=element_text(size=10),
-        axis.title=element_text(size=12),
-        plot.title = element_text(hjust = 0.5))+
-  facet_wrap(vars(Class))
-      
-corr12_5<-ggplot(layer12_5) +
-  aes(x = log(Opal_520), y = log(Opal_690),color = Class) +
-  geom_point(shape = "circle", size = 1L) +
-  scale_color_hue(direction = 1) +
-  labs(
-    x = "Log of FI for 520",
-    y = "Log of FI for 690",
-    title = "520 Versus 690 (With Logarithm) in layer12_5"
-  ) +
-  theme(axis.text=element_text(size=10),
-        axis.title=element_text(size=12),
-        plot.title = element_text(hjust = 0.5))+
-  facet_wrap(vars(Class))
+# Function to generate correlation plot
+corr_plot <- function(data, layer_title) {
+  corr_plot <- ggplot(data) +
+    aes(x = log(Opal_520), y = log(Opal_690), color = Class) +
+    geom_point(shape = "circle", size = 1L) +
+    scale_color_hue(direction = 1) +
+    labs(
+      x = "Log of FI for 520",
+      y = "Log of FI for 690",
+      title = paste("520 Versus 690 (With Logarithm) in", layer_title)
+    ) +
+    theme(
+      axis.text = element_text(size = 10),
+      axis.title = element_text(size = 12),
+      plot.title = element_text(hjust = 0.5)
+    ) +
+    facet_wrap(vars(Class))
+  return(corr_plot)
+}
 
-corr20_5<-ggplot(layer20_5) +
-  aes(x = log(Opal_520), y = log(Opal_690),color = Class) +
-  geom_point(shape = "circle", size = 1L) +
-  scale_color_hue(direction = 1) +
-  labs(
-    x = "Log of FI for 520",
-    y = "Log of FI for 690",
-    title = "520 Versus 690 (With Logarithm) in layer20_5"
-  ) +
-  theme(axis.text=element_text(size=10),
-        axis.title=element_text(size=12),
-        plot.title = element_text(hjust = 0.5))+
-  facet_wrap(vars(Class))
+# Generate correlation plots
+corr12_4 <- corr_plot(layer12_4, "layer12_4")
+corr12_5 <- corr_plot(layer12_5, "layer12_5")
+corr20_5 <- corr_plot(layer20_5, "layer20_5")
 ```
 
 ```{r, fig.height=4, out.height='50%'}
 #| warning: false
 #| message: false
 #| echo: false
-corr12_4
+# Print correlation plots for layer12_4
+print(corr12_4)
 ```
 
 ```{r, fig.height=4, out.height='50%'}
 #| warning: false
 #| message: false
 #| echo: false
-corr12_5
+# Print correlation plots for layer12_5
+print(corr12_5)
 ```
 
 ```{r, fig.height=4, out.height='50%'}
 #| warning: false
 #| message: false
 #| echo: false
-corr20_5
+# Print correlation plots for layer20_5
+print(corr20_5)
 ```
 
 Based on the figures above, it is evident that cells containing Opal_690 tend to exhibit higher values for Opal_690, which aligns with expectations. In both layer12_4 and layer12_5, the cells with combinations 520:570:690 and 520:690 demonstrate a positive correlation between Opal_520 and Opal_690. As the value of Opal_520 increases, there is a corresponding increase in the value of Opal_690. However, in layer20_5, a notable correlation between Opal_520 and Opal_690 is not readily apparent. The presence of a subtle positive correlation in layer20_5 raises the question of whether this correlation is a common feature across all layers or if it is specific to layer12_4 and layer12_5. Further investigation is required to ascertain whether the observed correlation is consistent across all layers or if it exhibits variation, with layer12_4 and layer12_5 demonstrating a more pronounced association compared to layer20_5.
@@ -288,50 +279,35 @@ Given that Opal_690 exhibits some correlation with Opal_520, we aim to explore a
 #| warning: false
 #| message: false
 #| echo: false
-dist12_4<-ggplot(layer12_4) +
-  aes(x =  Distance, y = log(Opal_520)) +
+# Function to generate distribution plot
+dist_plot <- function(data, title) {
+  plot <- ggplot(data) +
+    aes(x =  Distance, y = log(Opal_520)) +
   geom_point(shape = "circle", size = 1L) +
   scale_color_hue(direction = 1) +
   labs(
     x = "Distance",
     y = "Log of FI for 520",
-    title = "Distribution for 520 in layer12_4"
+    title = paste("Distribution for 520 in ", title)
   ) +
   theme(axis.text=element_text(size=8),
         axis.title=element_text(size=10),
         plot.title = element_text(hjust = 0.5))
+  
+  return(plot)
+}
 
-dist12_5<-ggplot(layer12_5) +
-  aes(x =  Distance, y = log(Opal_520)) +
-  geom_point(shape = "circle", size = 1L) +
-  scale_color_hue(direction = 1) +
-  labs(
-    x = "Distance",
-    y = "Log of FI for 520",
-    title = "Distribution for 520 in layer12_5"
-  ) +
-  theme(axis.text=element_text(size=8),
-        axis.title=element_text(size=10),
-        plot.title = element_text(hjust = 0.5))
-
-dist20_5<-ggplot(layer20_5) +
-  aes(x =  Distance, y = log(Opal_520)) +
-  geom_point(shape = "circle", size = 1L) +
-  scale_color_hue(direction = 1) +
-  labs(
-    x = "Distance",
-    y = "Log of FI for 520",
-    title = "Distribution for 520 in layer20_5"
-  ) +
-  theme(axis.text=element_text(size=8),
-        axis.title=element_text(size=10),
-        plot.title = element_text(hjust = 0.5))
+# Generate distribution plots
+dist12_4 <- dist_plot(layer12_4, "layer12_4")
+dist12_5 <- dist_plot(layer12_5, "layer12_5")
+dist20_5 <- dist_plot(layer20_5, "layer20_5")
 ```
 
 ```{r}
 #| warning: false
 #| message: false
 #| echo: false
+# Combine and arrange the distribution plots
 grid.arrange(dist12_4,dist12_5,dist20_5,nrow=3)
 ```
 
@@ -345,32 +321,33 @@ We also came up with a heat map to indicate the relationship of different genes.
 #| warning: false
 #| message: false
 #| echo: false
+# Function to create and display a heatmap
+create_and_display_heatmap <- function(cor_data, title) {
+  # Calculate the correlation matrix
+  cor_matrix <- cor(cor_data)
+  
+  # Create a heatmap
+  pheatmap(
+    cor_matrix,
+    color = colorRampPalette(c("#D73027", "#4575B4", "#91BFDB"))(50),
+    main = title,
+    fontsize = 8,
+    clustering_method = "complete"
+  )
+}
+
+# Create and display heatmap for Layer12_4
 cor_data <- log_FI[, c("MFI520", "MFI570", "MFI620", "MFI690", "dist")]
-cor_matrix <- cor(cor_data)
+create_and_display_heatmap(cor_data, "Heatmap of Layer12_4")
 
-pheatmap(cor_matrix, 
-         color = colorRampPalette(c("#D73027", "#4575B4", "#91BFDB"))(50), 
-         main = "Heatmap of Layer12_4",
-         fontsize = 8,
-         clustering_method = "complete")
-
+# Create and display heatmap for Layer12_5
 cor_data2 <- log_FI2[, c("MFI520", "MFI570", "MFI620", "MFI690", "dist")]
-cor_matrix2 <- cor(cor_data2)
+create_and_display_heatmap(cor_data2, "Heatmap of Layer12_5")
 
-pheatmap(cor_matrix2, 
-         color = colorRampPalette(c("#D73027", "#4575B4", "#91BFDB"))(50), 
-         main = "Heatmap of Layer12_5",
-         fontsize = 8,
-         clustering_method = "complete")
-
+# Create and display heatmap for Layer20_5
 cor_data3 <- log_FI3[, c("MFI520", "MFI570", "MFI620", "MFI690", "dist")]
-cor_matrix3 <- cor(cor_data3)
+create_and_display_heatmap(cor_data3, "Heatmap of Layer20_5")
 
-pheatmap(cor_matrix3, 
-         color = colorRampPalette(c("#D73027", "#4575B4", "#91BFDB"))(50), 
-         main = "Heatmap of Layer20_5",
-         fontsize = 8,
-         clustering_method = "complete")
 ```
 
 For the figures above, the intensity of color serves as an indicator of the strength of correlation, with darker shades representing greater correlation. Notably, if a line connects two variables, it signifies that these two variables exhibit the highest correlation compared to any others. Examining both layer12_4 and layer12_5, a notable line connects Opal_690 and Opal_520, providing empirical support for our hypothesis regarding their high correlation. Contrary to this, as previously mentioned, in layer20_5, the correlation between Opal_690 and Opal_520 is not particularly significant; however, it is intriguing to observe a connecting line between Opal_690 and Distance, indicating a noteworthy correlation between these variables. This unexpected correlation in layer20_5 adds a layer of complexity to our understanding, highlighting the importance of considering layer-specific dynamics in interpreting correlation patterns.
@@ -383,86 +360,56 @@ Since there is more than two variables we’re dealing with, an idea of visualiz
 #| warning: false
 #| message: false
 #| echo: false
-all12_4 <- plot_ly(log_FI, x = ~MFI570, y = ~MFI620, z = ~MFI690, marker = list(color = ~MFI520, colorscale = "Rainbow", showscale = TRUE, size = 3))
-all12_4 <- all12_4 %>% add_markers()
-all12_4 <- all12_4 %>% layout(title = "570 vs. 620 vs 690,in layer12_4",
-                              scene = list(xaxis = list(title = '570'),
-                                           yaxis = list(title = '620'),
-                                           zaxis = list(title = '690')))
+# Function to create a 3D scatter plot
+all_plot <- function(data, title, xaxis_title, yaxis_title, zaxis_title) {
+  scatter_plot <- plot_ly(data, x = ~MFI570, y = ~MFI620, z = ~MFI690, 
+                          marker = list(color = ~MFI520, colorscale = "Rainbow", showscale = TRUE, size = 3)) %>%
+    add_markers() %>%
+    layout(title = title,
+           scene = list(xaxis = list(title = xaxis_title),
+                        yaxis = list(title = yaxis_title),
+                        zaxis = list(title = zaxis_title)))
+  return(scatter_plot)
+}
 
+# Function to filter data and create a 3D scatter plot
+part_plot <- function(data, title, xaxis_title, yaxis_title, zaxis_title) {
+  filtered_data <- log(filter(data, IND520 == TRUE & MFI520 < quantile(data$MFI520, 0.95) & dist > quantile(data$dist, 0.05)))
+  scatter_plot <- plot_ly(filtered_data, x = ~MFI570, y = ~MFI620, z = ~MFI690, 
+                          marker = list(color = ~MFI520, colorscale = "Rainbow", showscale = TRUE, size = 3)) %>%
+    add_markers() %>%
+    layout(title = title,
+           scene = list(xaxis = list(title = xaxis_title),
+                        yaxis = list(title = yaxis_title),
+                        zaxis = list(title = zaxis_title)))
+  return(scatter_plot)
+}
 
+dis_plot <- function(data, title, xaxis_title, yaxis_title, zaxis_title) {
+  filtered_data <- log(filter(data, MFI520 < quantile(data$MFI520, 0.95) & dist > quantile(data$dist, 0.05)))
+  scatter_plot <- plot_ly(filtered_data, x = ~MFI520, y = ~MFI570, z = ~MFI690, 
+                          marker = list(color = ~dist, colorscale = "Rainbow", showscale = TRUE, size = 3)) %>%
+    add_markers() %>%
+    layout(title = title,
+           scene = list(xaxis = list(title = xaxis_title),
+                        yaxis = list(title = yaxis_title),
+                        zaxis = list(title = zaxis_title)))
+  return(scatter_plot)
+}
+# Create 3D scatter plots for layer12_4
+all12_4 <- all_plot(log_FI, "570 vs. 620 vs 690,in layer12_4", '570', '620', '690')
+part12_4 <- part_plot(AMM12_4, "520=T,570 vs. 620 vs 690, in layer12_4", '570', '620', '690')
+dis12_4 <- dis_plot(AMM12_4, "520=T, 520 vs. 570 vs 690, in layer12_4", '520', '570', '690')
 
-log_FI <- log(filter(AMM12_4, IND520 == T & MFI520 < quantile(AMM12_4$MFI520, 0.95) ))
-part12_4 <- plot_ly(log_FI, x = ~MFI570, y = ~MFI620, z = ~MFI690, marker = list(color = ~MFI520, colorscale = "Rainbow", showscale = TRUE, size = 3))
-part12_4 <- part12_4 %>% add_markers()
-part12_4 <- part12_4 %>% layout(title = "520=T,570 vs. 620 vs 690, in layer12_4",
-                              scene = list(xaxis = list(title = '570'),
-                                           yaxis = list(title = '620'),
-                                           zaxis = list(title = '690')))
+# Create 3D scatter plots for layer12_5
+all12_5 <- all_plot(log_FI, "570 vs. 620 vs 690,in layer12_5", '570', '620', '690')
+part12_5 <- part_plot(AMM12_4, "520=T,570 vs. 620 vs 690, in layer12_5", '570', '620', '690')
+dis12_5 <- dis_plot(AMM12_4, "520=T, 520 vs. 570 vs 690, in layer12_5", '520', '570', '690')
 
-
-
-log_FI <- log(filter(AMM12_4,  MFI520 < quantile(AMM12_4$MFI520, 0.95) & dist > quantile(AMM12_4$dist, 0.05)))
-dis12_4 <- plot_ly(log_FI, x = ~MFI520, y = ~MFI570, z = ~MFI690, marker = list(color = ~dist, colorscale = "Rainbow", showscale = TRUE, size = 3))
-dis12_4 <- dis12_4 %>% add_markers()
-dis12_4 <- dis12_4 %>% layout(title = "520=T, 520 vs. 570 vs 690, in layer12_4",
-                                scene = list(xaxis = list(title = '520'), 
-                                             yaxis = list(title = '570'), 
-                                             zaxis = list(title = '690')))
-
-all12_5 <- plot_ly(log_FI, x = ~MFI570, y = ~MFI620, z = ~MFI690, marker = list(color = ~MFI520, colorscale = "Rainbow", showscale = TRUE, size = 3))
-all12_5 <- all12_5 %>% add_markers()
-all12_5 <- all12_5 %>% layout(title = "570 vs. 620 vs 690,in layer12_5",
-                              scene = list(xaxis = list(title = '570'),
-                                           yaxis = list(title = '620'),
-                                           zaxis = list(title = '690')))
-
-
-
-log_FI2 <- log(filter(AMM12_4, IND520 == T & MFI520 < quantile(AMM12_4$MFI520, 0.95) ))
-part12_5 <- plot_ly(log_FI2, x = ~MFI570, y = ~MFI620, z = ~MFI690, marker = list(color = ~MFI520, colorscale = "Rainbow", showscale = TRUE, size = 3))
-part12_5 <- part12_5 %>% add_markers()
-part12_5 <- part12_5 %>% layout(title = "520=T,570 vs. 620 vs 690, in layer12_5",
-                              scene = list(xaxis = list(title = '570'),
-                                           yaxis = list(title = '620'),
-                                           zaxis = list(title = '690')))
-
-
-
-log_FI2 <- log(filter(AMM12_4,  MFI520 < quantile(AMM12_4$MFI520, 0.95) & dist > quantile(AMM12_4$dist, 0.05)))
-dis12_5 <- plot_ly(log_FI2, x = ~MFI520, y = ~MFI570, z = ~MFI690, marker = list(color = ~dist, colorscale = "Rainbow", showscale = TRUE, size = 3))
-dis12_5 <- dis12_5 %>% add_markers()
-dis12_5 <- dis12_5 %>% layout(title = "520=T, 520 vs. 570 vs 690, in layer12_5",
-                                scene = list(xaxis = list(title = '520'), 
-                                             yaxis = list(title = '570'), 
-                                             zaxis = list(title = '690')))
-
-all20_5 <- plot_ly(log_FI, x = ~MFI570, y = ~MFI620, z = ~MFI690, marker = list(color = ~MFI520, colorscale = "Rainbow", showscale = TRUE, size = 3))
-all20_5 <- all20_5 %>% add_markers()
-all20_5 <- all20_5 %>% layout(title = "570 vs. 620 vs 690,in layer20_5",
-                              scene = list(xaxis = list(title = '570'),
-                                           yaxis = list(title = '620'),
-                                           zaxis = list(title = '690')))
-
-
-
-log_FI3 <- log(filter(AMM12_4, IND520 == T & MFI520 < quantile(AMM12_4$MFI520, 0.95) ))
-part20_5 <- plot_ly(log_FI3, x = ~MFI570, y = ~MFI620, z = ~MFI690, marker = list(color = ~MFI520, colorscale = "Rainbow", showscale = TRUE, size = 3))
-part20_5 <- part20_5 %>% add_markers()
-part20_5 <- part20_5 %>% layout(title = "520=T,570 vs. 620 vs 690, in layer20_5",
-                              scene = list(xaxis = list(title = '570'),
-                                           yaxis = list(title = '620'),
-                                           zaxis = list(title = '690')))
-
-
-
-log_FI3 <- log(filter(AMM12_4,  MFI520 < quantile(AMM12_4$MFI520, 0.95) & dist > quantile(AMM12_4$dist, 0.05)))
-dis20_5 <- plot_ly(log_FI3, x = ~MFI520, y = ~MFI570, z = ~MFI690, marker = list(color = ~dist, colorscale = "Rainbow", showscale = TRUE, size = 3))
-dis20_5 <- dis20_5 %>% add_markers()
-dis20_5 <- dis20_5 %>% layout(title = "520=T, 520 vs. 570 vs 690, in layer20_5",
-                                scene = list(xaxis = list(title = '520'), 
-                                             yaxis = list(title = '570'), 
-                                             zaxis = list(title = '690')))
+# Create 3D scatter plots for layer20_5
+all20_5 <- all_plot(log_FI, "570 vs. 620 vs 690,in layer20_5", '570', '620', '690')
+part20_5 <- part_plot(AMM12_4, "520=T,570 vs. 620 vs 690, in layer20_5", '570', '620', '690')
+dis20_5 <- dis_plot(AMM12_4, "520=T, 520 vs. 570 vs 690, in layer20_5", '520', '570', '690')
 
 ```
 
@@ -470,6 +417,7 @@ dis20_5 <- dis20_5 %>% layout(title = "520=T, 520 vs. 570 vs 690, in layer20_5",
 #| warning: false
 #| message: false
 #| echo: false
+# 3D Scatter plot for all data in layer12_4
 all12_4
 grid::grid.raster(readPNG("all12_4.png"))
 ```
@@ -478,6 +426,7 @@ grid::grid.raster(readPNG("all12_4.png"))
 #| warning: false
 #| message: false
 #| echo: false
+# 3D Scatter plot for all data in layer12_5
 all12_5
 grid::grid.raster(readPNG("all12_5.png"))
 ```
@@ -486,6 +435,7 @@ grid::grid.raster(readPNG("all12_5.png"))
 #| warning: false
 #| message: false
 #| echo: false
+# 3D Scatter plot for all data in layer20_5
 all20_5
 grid::grid.raster(readPNG("all20_5.png"))
 ```
@@ -496,6 +446,7 @@ The plots above show the relationship among each gene in terms of intensity leve
 #| warning: false
 #| message: false
 #| echo: false
+# 3D Scatter plot for filtered data (520=T) in layer12_4
 part12_4
 grid::grid.raster(readPNG("part12_4.png"))
 ```
@@ -504,6 +455,7 @@ grid::grid.raster(readPNG("part12_4.png"))
 #| warning: false
 #| message: false
 #| echo: false
+# 3D Scatter plot for filtered data (520=T) in layer12_5
 part12_5
 grid::grid.raster(readPNG("part12_5.png"))
 ```
@@ -512,6 +464,7 @@ grid::grid.raster(readPNG("part12_5.png"))
 #| warning: false
 #| message: false
 #| echo: false
+# 3D Scatter plot for filtered data (520=T) in layer20_5
 part20_5
 grid::grid.raster(readPNG("part20_5.png"))
 ```
@@ -522,6 +475,7 @@ As removing the cells without 520, some relationships could be observed based on
 #| warning: false
 #| message: false
 #| echo: false
+# 3D Scatter plot for filtered data (520=T, 520 vs. 570 vs 690) in layer12_4
 dis12_4
 grid::grid.raster(readPNG("dis12_4.png"))
 ```
@@ -530,6 +484,7 @@ grid::grid.raster(readPNG("dis12_4.png"))
 #| warning: false
 #| message: false
 #| echo: false
+# 3D Scatter plot for filtered data (520=T, 520 vs. 570 vs 690) in layer12_5
 dis12_5
 grid::grid.raster(readPNG("dis12_5.png"))
 ```
@@ -538,6 +493,7 @@ grid::grid.raster(readPNG("dis12_5.png"))
 #| warning: false
 #| message: false
 #| echo: false
+# 3D Scatter plot for filtered data (520=T, 520 vs. 570 vs 690) in layer20_5
 dis20_5
 grid::grid.raster(readPNG("dis20_5.png"))
 ```
