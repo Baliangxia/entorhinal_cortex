@@ -386,7 +386,10 @@ part_plot <- function(data, title, xaxis_title, yaxis_title, zaxis_title) {
 }
 
 dis_plot <- function(data, title, xaxis_title, yaxis_title, zaxis_title) {
-  filtered_data <- log(filter(data, MFI520 < quantile(data$MFI520, 0.95) & dist > quantile(data$dist, 0.05)))
+  filtered_data <- filter(data, MFI520 < quantile(data$MFI520, 0.95) & dist > quantile(data$dist, 0.05))
+   filtered_data$MFI520 <- log(filtered_data$MFI520)
+    filtered_data$MFI570 <- log(filtered_data$MFI570)
+     filtered_data$MFI690 <- log(filtered_data$MFI690)
   scatter_plot <- plot_ly(filtered_data, x = ~MFI520, y = ~MFI570, z = ~MFI690, 
                           marker = list(color = ~dist, colorscale = "Rainbow", showscale = TRUE, size = 3)) %>%
     add_markers() %>%
