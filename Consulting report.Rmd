@@ -43,7 +43,7 @@ We have divided the three layers into two datasets: one comprises cells containi
 | 520:690         |  0.4816  |  0.0202  |  0.02   |  0.3153  |  2868.6372  |
 | 520:570         |  0.2459  |  0.1088  |  0.0211 |  0.0229  |  2918.8682  |
 
-In a separate dataset, we assess the presence of genes in each cell, incorporating four additional columns with boolean outputs. This dataset is exclusively employed for generating 3D plots. Below is an illustration featuring the first five rows of this particular dataset:
+In a separate dataset, we assess the presence of genes in each cell, incorporating four additional columns with boolean outputs. Below is an illustration featuring the first five rows of this particular dataset:
 
 |  MFI520  |  MFI570  |  MFI620 |  MFI690  |    dist     |  IND520  |  IND570  |  IND620 |  IND690  | 
 |----------|----------|---------|----------|-------------|----------|----------|---------|----------|
@@ -271,51 +271,89 @@ print(corr20_5)
 
 Based on the figures above, it is evident that cells containing Opal_690 tend to exhibit higher values for Opal_690, which aligns with expectations. In both layer12_4 and layer12_5, the cells with combinations 520:570:690 and 520:690 demonstrate a positive correlation between Opal_520 and Opal_690. As the value of Opal_520 increases, there is a corresponding increase in the value of Opal_690. However, in layer20_5, a notable correlation between Opal_520 and Opal_690 is not readily apparent. The presence of a subtle positive correlation in layer20_5 raises the question of whether this correlation is a common feature across all layers or if it is specific to layer12_4 and layer12_5. Further investigation is required to ascertain whether the observed correlation is consistent across all layers or if it exhibits variation, with layer12_4 and layer12_5 demonstrating a more pronounced association compared to layer20_5.
 
-## Distribution for Distance and Opal_520 
+## Heatmap
 
-Given that Opal_690 exhibits some correlation with Opal_520, we aim to explore any specific correlation between Opal_520 and Distance. The reason we use Opal_520 is because Opal_520 and Opal_690 are highly correlated. Opal_520 is a better choice since it is the indicator gene for the region. In the plot, the x-axis represents the value of the Distance, while the y-axis illustrates the logarithmic values of the fluorescent intensity for Opal_520.
+We will construct heatmaps to illustrate the correlation between genes and distance.
+
+### Heatmap for distance and one gene
+
+These heatmaps depict the correlation between distance and the log-transformed mean fluorescent intensity (MFI) of a specific gene in a given dataset. The selection of Opal_520 is motivated by its strong correlation with Opal_690. Opting for Opal_520 is advantageous as it serves as the indicator gene for the region of interest. In the visual representation, the x-axis corresponds to the Distance values, and the y-axis portrays the logarithmic values of the fluorescent intensity for Opal_520.
 
 ```{r, fig.height=4, out.height='50%'}
 #| warning: false
 #| message: false
 #| echo: false
-# Function to generate distribution plot
-dist_plot <- function(data, title) {
-  plot <- ggplot(data) +
-    aes(x =  Distance, y = log(Opal_520)) +
-  geom_point(shape = "circle", size = 1L) +
-  scale_color_hue(direction = 1) +
-  labs(
-    x = "Distance",
-    y = "Log of FI for 520",
-    title = paste("Distribution for 520 in ", title)
-  ) +
-  theme(axis.text=element_text(size=8),
-        axis.title=element_text(size=10),
-        plot.title = element_text(hjust = 0.5))
-  
-  return(plot)
-}
+log_FI <- AMM12_4
+log_FI[,1:4] <- log(AMM12_4[,1:4])
+log_FI2 <- AMM12_5
+log_FI2[,1:4] <- log(AMM12_5[,1:4])
+log_FI3 <- AMM20_5
+log_FI3[,1:4] <- log(AMM20_5[,1:4])
 
-# Generate distribution plots
-dist12_4 <- dist_plot(layer12_4, "layer12_4")
-dist12_5 <- dist_plot(layer12_5, "layer12_5")
-dist20_5 <- dist_plot(layer20_5, "layer20_5")
+#this function plots a heatmap of of distance vs. the log mean florescent intensity of one gene
+#gene_number is one of 520, 570, 620, and 690
+#when filter is TRUE, then all datapoints that are not labelled as 520 and "gene_number" will be filterred out
+#smoothness controls the number of contour lines in the plot -- higher smoothness means more contour lines
+#plots will show weird triangles when margins are set to be too small
+
+dist_intensity_heatmap <- function(dataset, gene_number,layer_name, filter = TRUE,  smoothness = 15, margins = 0.1) {
+  
+  cnames <- colnames(dataset)
+  rel_names <- cnames[grep(gene_number, cnames)]
+  gene <- rel_names[grep("MFI", rel_names)]
+  gene_IND <- rel_names[grep("IND", rel_names)]
+  
+  if (filter == TRUE) {
+    dataset <- dataset %>% filter(!!sym(gene_IND) == 1 & IND520 == 1)
+  }
+
+  #margin calculation
+  x_range <- max(dataset$dist) - min(dataset$dist)
+  x_LB <- min(dataset$dist) - margins * x_range
+  x_UB <- max(dataset$dist) + margins * x_range
+  
+  y_range <- max(dataset[gene]) - min(dataset[gene])
+  y_LB <- min(dataset[gene]) - margins * y_range
+  y_UB <- max(dataset[gene]) + margins * y_range
+  
+  ggplot(dataset, aes(dist, !!sym(gene))) +
+    stat_density2d(geom = "polygon", aes(fill = after_stat(level), alpha = after_stat(level)), bins = smoothness) +
+    scale_alpha_continuous(range = c(0.1, 0.5)) +
+    scale_fill_gradient(low = "blue", high = "red") +
+    lims(x = c(x_LB, x_UB), y = c(y_LB, y_UB)) +
+    ggtitle(paste("Heatmap: Distance vs.", gene,"in",layer_name)) + 
+    ylab(paste("log(", gene, ")"))
+}
 ```
 
-```{r}
+```{r, fig.height=4, out.height='50%'}
 #| warning: false
 #| message: false
 #| echo: false
-# Combine and arrange the distribution plots
-grid.arrange(dist12_4,dist12_5,dist20_5,nrow=3)
+# heatmap for distance and Opal_520 in layer12_4
+dist_intensity_heatmap(log_FI, 520,"layer12_4", filter = FALSE,  smoothness = 15, margins = 0.15)
+```
+```{r, fig.height=4, out.height='50%'}
+#| warning: false
+#| message: false
+#| echo: false
+# heatmap for distance and Opal_520 in layer12_5
+dist_intensity_heatmap(log_FI2, 520,"layer12_5", filter = FALSE,  smoothness = 15, margins = 0.15)
 ```
 
-In the figure above, the distribution of Opal_520 varies significantly across different layers. Specifically, in layer12_4, Opal_520 exhibits high density within the distance range of 0 to 1500, with minimal points around 1500 and 2500, and noticeable clusters around 2000 and 3000. Moving to layer12_5, Opal_520 is characterized by consistently high density throughout the entire distance range from 0 to 7000. However, in layer20_5, the points are widely scattered, and no discernible trend is apparent.
+```{r, fig.height=4, out.height='50%'}
+#| warning: false
+#| message: false
+#| echo: false
+# heatmap for distance and Opal_520 in layer20_5
+dist_intensity_heatmap(log_FI3, 520,"layer20_5", filter = FALSE,  smoothness = 15, margins = 0.15)
+```
 
-## Heatmap
+The distribution of Opal_520 appears to vary across different layers. In layer12_4, the plot exhibits a high density centered at coordinates (x=1500, y=-4.5) with a subtle vertical symmetry. Contrarily, for layer12_5 and layer20_5, the highest density is skewed towards the left, particularly around x=1000. Notably, there are distinctions between layer12_5 and layer20_5. In layer12_5, there is a slight horizontal symmetry, whereas layer20_5 lacks a discernible trend. To generate additional insights using the provided R code, users can experiment with different datasets, gene numbers, and layer names by adjusting the function parameters such as "**dataset**", "**gene_number**", and "**layer_name**" in the dist_intensity_heatmap function.    
 
-We also came up with a heat map to indicate the relationship of different genes. And we can see that there is some difference between the correlations among 3 layers. 
+### Heatmap for all variables
+
+We also came up with heatmaps to indicate the relationship of different genes. And we can see that there is some difference between the correlations among 3 layers. 
 
 ```{r, fig.height=4, out.height='50%'}
 #| warning: false
@@ -386,10 +424,7 @@ part_plot <- function(data, title, xaxis_title, yaxis_title, zaxis_title) {
 }
 
 dis_plot <- function(data, title, xaxis_title, yaxis_title, zaxis_title) {
-  filtered_data <- filter(data, MFI520 < quantile(data$MFI520, 0.95) & dist > quantile(data$dist, 0.05))
-   filtered_data$MFI520 <- log(filtered_data$MFI520)
-    filtered_data$MFI570 <- log(filtered_data$MFI570)
-     filtered_data$MFI690 <- log(filtered_data$MFI690)
+  filtered_data <- log(filter(data, MFI520 < quantile(data$MFI520, 0.95) & dist > quantile(data$dist, 0.05)))
   scatter_plot <- plot_ly(filtered_data, x = ~MFI520, y = ~MFI570, z = ~MFI690, 
                           marker = list(color = ~dist, colorscale = "Rainbow", showscale = TRUE, size = 3)) %>%
     add_markers() %>%
